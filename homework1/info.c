@@ -115,6 +115,8 @@ insert_song (void)
   curr->album = (char*) malloc (sizeof(char[30]));
   curr->date = (char*) malloc (sizeof(char[8]));
   
+/*codes on interactive insertion {{{1  */
+
   printf("[Insert] Please indicate the song's title (max 30 chars)\n    : ");
   flag = gets(curr->title);
   if (!flag)  printf("An error occurred!\n");
@@ -131,6 +133,8 @@ insert_song (void)
   /*The following two lines of code are used to clear the input buffer.*/
   int c;
   while((c = getchar()) != '\n' && c != EOF);
+
+/*}}}1*/
 
   list_append(curr);
 }
