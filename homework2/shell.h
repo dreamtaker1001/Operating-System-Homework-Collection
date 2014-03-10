@@ -5,9 +5,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/stat.h>
 #define CMD_EMPTY -1
 #define NORMAL 0
 #define EXIT_SHELL -2
+#define SYNTAX_ERROR -3
+#define OTHER_ERROR -4
 
 /* the PATH data structure */
 struct pathelement
@@ -21,6 +26,14 @@ struct cmd
 {
   char *element;
   struct cmd *next;
+};
+
+/* the alias data structure */
+struct alias
+{
+  char *new_name;
+  char *old_name;
+  struct alias *next;
 };
 
 /* the parse function for cmds,
@@ -37,6 +50,10 @@ find_cmd();
 void 
 shell_init();
 
+/* This initializes the alias system */
+void
+alias_init();
+
 /* This prints the PATH just gotten from system */
 void
 print_env_path();
@@ -50,6 +67,14 @@ struct pathelement *get_path();
  */ 
 int 
 respond_cycle();
+
+/* prepare for next cycle
+ * cleaning pointers and allocating new pointers
+ * to prevent memory leak or some weird things
+ * from happening
+ */
+void
+prepare_for_next_cycle();
 
 /* The before_exit function. Deals with tracking the status of the
  * running shell and reports errors if any

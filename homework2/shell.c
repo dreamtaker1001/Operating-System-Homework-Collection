@@ -2,10 +2,14 @@
 
 extern char *prompt;
 extern char *cwd;
+extern char *last_dir;
 extern char *cmd_char;
 extern struct cmd *cmd_head;
+struct alias *alias_head;
 char *p;
 char *env_path;
+char **env;
+char **env_tmp;
 struct pathelement *path_list = NULL;
 struct pathelement *path_tmp = NULL;
 
@@ -15,23 +19,38 @@ shell_init(void)
 {
   prompt = (char*) malloc(sizeof(char[16]));
   cwd = (char*) malloc(sizeof(char[255]));
-  cmd_char = (char*) malloc(sizeof(char[255]));
+  last_dir = (char*) malloc(sizeof(char[255])); 
+  strcpy(last_dir, "");
+  cmd_char = (char*) calloc(1, sizeof(char[255]));
   cmd_head = (struct cmd*) malloc(sizeof(struct cmd));
   p = (char*) malloc(sizeof(char[128]));
   printf("*** Welcome to Yuqi's Shell ! ***\n");
   path_list = (struct pathelement*) malloc (sizeof(struct pathelement));
   path_list -> next = NULL;
   path_list -> element = NULL;
-
-  /*This is just first_step initialization 
+  if (getcwd(cwd, 255) == NULL) {
+    //debug information
+    printf("[YuqiShell] getcwd error: errorno is %d.\n", errno);
+  }
+  /* This is just first_step initialization 
    * to prevent myself from forgetting it 
    * as well as my hands are cut as a consequence...
    */
   strcpy(prompt, "liuyuqi");
-  strcpy(cwd, "/");
 
   path_list = get_path();
   print_env_path();
+  alias_init();
+}
+
+/* This initializes the alias system */
+void
+alias_init(void)
+{
+  alias_head = (struct alias*)calloc(1, sizeof(struct alias));
+  alias_head->old_name = NULL;
+  alias_head->new_name = NULL;
+  alias_head->next = NULL;
 }
 
 /* get_path() function, used to get the current PATH variable*/
@@ -83,26 +102,42 @@ print_env_path()
 void
 before_exit(int status)
 {
-  free(cwd);
-  free(prompt);
-  free(cmd_char);
-  free(p);
-  free(env_path);
-  free(path_list);
-  free(path_tmp);
+    if(cwd)
+        free(cwd);
+    if(prompt)
+        free(prompt);
+    if (cmd_char)
+        free(cmd_char);
+    if (p)
+        free(p);
+    if (env_path)
+        free(env_path);
+    if (path_list) {
+        path_tmp = path_list;
+        while (path_tmp) {
+          struct pathelement *next_to_del = path_tmp -> next;
+          free(path_tmp);
+          path_tmp = next_to_del;
+        }
+        free(path_list);
+    }
+    if (path_tmp)
+        free(path_tmp);
 }
 
 /* The main function of this shell
  */
 int
-main(void)
+main(int argc, char** argv, char** envp)
 {
   shell_init();
   int status = 0;
+  env = envp;
   while (1) {
     status = respond_cycle();
     if (status == EXIT_SHELL)
       break;
+    prepare_for_next_cycle();
   }
   before_exit(status);
   return 0;
