@@ -86,4 +86,26 @@ cmd_alias(int, char**);
  */
 struct alias
 *alias_new(char*, char*);
+
+/* find_alias() function,
+ * returns the old name for the alias new name.
+ * If alias not found, return argv[0] itself.
+ */
+char
+*find_alias(char*);
+
+/* cmd_history() function
+ */
+void
+cmd_history(int, char**);
+
+/* print_history() function
+ */
+void
+print_history(int);
+
+/* cmd_kill() function
+ */
+int
+cmd_kill(int, char**);
 #endif

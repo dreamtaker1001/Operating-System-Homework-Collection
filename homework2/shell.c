@@ -41,6 +41,7 @@ shell_init(void)
   path_list = get_path();
   print_env_path();
   alias_init();
+  history_init();
 }
 
 /* This initializes the alias system */

@@ -6,6 +6,8 @@ char* cwd;
 char* cmd_char;
 struct cmd *cmd_tmp;
 struct cmd *cmd_head;
+struct history *hist_head;
+struct history *hist_curr;
 extern char* p;
 int argc;
 char** argv;
@@ -48,6 +50,7 @@ respond_cycle()
 void
 prepare_for_next_cycle()
 {
+  history_add(cmd_char);
   int index;
   for (index = 0; index < argc; index++) {
     free(argv[index]);
@@ -74,6 +77,32 @@ prepare_for_next_cycle()
     cmd_head = (struct cmd*)calloc(1, sizeof(struct cmd));
   if (p)
     p = (char*)realloc(p, sizeof(char[128]));
+}
+
+/* the history init function*/
+void
+history_init(void)
+{
+  hist_head = (struct history*)malloc(sizeof(struct history));
+  hist_curr = hist_head;
+}
+
+/* the history_add function */
+struct history
+*history_add(void)
+{
+  if (hist_head->cmd == NULL) {
+    hist_curr = hist_head;
+  }
+  else {
+    struct history *new = (struct history*)malloc(sizeof(struct history));
+    hist_curr -> next = new;
+    hist_curr = new;
+  }
+  hist_curr -> next = NULL;
+  hist_curr->cmd = (char*)malloc(sizeof(cmd_char));
+  strcpy(hist_curr->cmd, cmd_char);
+  return hist_curr;
 }
 
 /* the parse function for cmds */
@@ -161,6 +190,9 @@ int
 find_cmd()
 {
   int return_value = 0;
+  /* find_alias */
+  strcpy (cmd_head->element, find_alias(cmd_head->element));
+
   /* exit */
   if (strcmp(cmd_head->element, "exit") == 0) {
       printf("Typed EXIT, exiting the shell.\n");
@@ -227,7 +259,10 @@ find_cmd()
   else if (strcmp(cmd_head->element, "alias") == 0) {
     return cmd_alias(argc, argv);
   }
-
+  /* history */
+  else if (strcmp(cmd_head->element, "history") == 0) {
+    cmd_history(argc, argv);
+  }
   
 
 

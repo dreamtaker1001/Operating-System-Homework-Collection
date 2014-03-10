@@ -36,6 +36,21 @@ struct alias
   struct alias *next;
 };
 
+/* the history data structure */
+struct history
+{
+  char *cmd;
+  struct history *next;
+};
+
+/* the history init function*/
+void
+history_init();
+
+/* the history_add function */
+struct history
+*history_add();
+
 /* the parse function for cmds,
  * the return value is "argc"
  */
