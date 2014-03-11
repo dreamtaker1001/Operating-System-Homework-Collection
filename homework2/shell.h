@@ -91,6 +91,24 @@ respond_cycle();
 void
 prepare_for_next_cycle();
 
+/* check_outer_cmd() function
+ * checks whether command is an outer-source command
+ */
+int
+check_outer_cmd(int, char**);
+
+/* exec_fixed_path() function,
+ * find fixed path outsource cmds and execute if matched
+ */
+int
+exec_fixed_path(char**);
+
+/* get_absolute_path() function,
+ * do as its name shows...
+ */
+char
+*get_absolute_path(char*);
+
 /* The before_exit function. Deals with tracking the status of the
  * running shell and reports errors if any
  */

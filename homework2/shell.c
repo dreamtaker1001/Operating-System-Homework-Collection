@@ -29,8 +29,7 @@ shell_init(void)
   path_list -> next = NULL;
   path_list -> element = NULL;
   if (getcwd(cwd, 255) == NULL) {
-    //debug information
-    printf("[YuqiShell] getcwd error: errorno is %d.\n", errno);
+    printf("YuqiShell: getcwd error: %s\n", strerror(errno));
   }
   /* This is just first_step initialization 
    * to prevent myself from forgetting it 
@@ -86,7 +85,7 @@ struct pathelement *get_path()
 void
 print_env_path()
 {
-  printf("[YuqiShell] The PATH variable in the current system is:\n\t");
+  printf("YuqiShell: The PATH variable in the current system is:\n\t");
   path_tmp = path_list;
   while (path_tmp != NULL) {
     printf("%s", path_tmp->element);
@@ -141,5 +140,6 @@ main(int argc, char** argv, char** envp)
     prepare_for_next_cycle();
   }
   before_exit(status);
+  fflush(stdout);
   return 0;
 }

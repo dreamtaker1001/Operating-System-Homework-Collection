@@ -18,6 +18,8 @@ char** argv;
 int
 respond_cycle()
 {
+  //debug information
+  //printf("Process %d, Went into another cycle!\n", getpid());
   int cmd_count, return_value;
   printf("%s [%s]> ", prompt, cwd);
   fgets(cmd_char, 255, stdin); 
@@ -52,11 +54,11 @@ prepare_for_next_cycle()
 {
   history_add(cmd_char);
   int index;
-  for (index = 0; index < argc; index++) {
-    free(argv[index]);
-  }
+  //for (index = 0; index < argc; index++) {
+    //free(argv[index]);
+  //}
   if (argv) {
-    free(argv);
+    //free(argv);
     //printf("Successfully freed argv itself!\n");
   }
   if (cmd_char) {
@@ -200,27 +202,27 @@ find_cmd()
   }
   /* which */
   else if (strcmp(cmd_head->element, "which") == 0) {
-      printf("[YuqiShell] Executing built-in command \"which\"\n");
+      printf("YuqiShell: Executing built-in command \"which\"\n");
       if (argc != 2){
           printf("which: Usage: which <file/command>\n");
           return SYNTAX_ERROR;
       }
-      return (cmd_which(argc, argv, 1));
+      return (cmd_which(argc, argv, 1, NULL));
   }
   /* where */
   else if (strcmp(cmd_head->element, "where") == 0) {
-      printf("[YuqiShell] Executing built-in command \"where\"\n");
+      printf("YuqiShell: Executing built-in command \"where\"\n");
       if (argc != 2){
-          printf("[YuqiShell] where: Usage: where <file/command>\n");
+          printf("YuqiShell: where: Usage: where <file/command>\n");
           return SYNTAX_ERROR;
       }
-      return (cmd_which(argc, argv, 2));
+      return (cmd_which(argc, argv, 2, NULL));
   }
   /* pwd */
   else if (strcmp(cmd_head->element, "pwd") == 0) {
-      printf("[YuqiShell] Executing built-in command \"pwd\"\n");
+      printf("YuqiShell: Executing built-in command \"pwd\"\n");
       if (argc != 1) {
-        printf("[YuqiShell] pwd: too many arguments! Only need to type \"pwd\"~~\n");
+        printf("YuqiShell: pwd: too many arguments! Only need to type \"pwd\"~~\n");
         return SYNTAX_ERROR;
       }
       cmd_pwd();
@@ -236,9 +238,9 @@ find_cmd()
   }
   /* pid */
   else if (strcmp(cmd_head->element, "pid") == 0) {
-    printf("[YuqiShell] Executing built-in command \"pid\"\n");
+    printf("YuqiShell: Executing built-in command \"pid\"\n");
     if (argc != 1) {
-      printf("[YuqiShell] pid: too many arguments! Only need to type \"pid\"~~\n");
+      printf("YuqiShell: pid: too many arguments! Only need to type \"pid\"~~\n");
       return SYNTAX_ERROR;
     }
     cmd_pid();
@@ -263,8 +265,17 @@ find_cmd()
   else if (strcmp(cmd_head->element, "history") == 0) {
     cmd_history(argc, argv);
   }
-  
-
+  /* kill */
+  else if (strcmp(cmd_head->element, "kill") == 0) {
+    return cmd_kill(argc, argv);
+  }
+  else if (check_outer_cmd(argc, argv) == NORMAL) {
+    return NORMAL;
+  }
+  else {
+    printf("YuqiShell: Command %s not found!\n", cmd_head->element);
+    return SYNTAX_ERROR;
+  }
 
   return NORMAL;
 }

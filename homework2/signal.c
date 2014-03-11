@@ -1,6 +1,7 @@
 #include "shell.h"
 #include "cmd.h"
 #include <signal.h>
+#include <sys/types.h>
 
 extern struct pathelement *path_tmp;
 extern struct pathelement *path_list;
@@ -16,22 +17,22 @@ char *last_dir;
 int
 cmd_kill(int argc, char** argv)
 {
-  printf("[YuqiShell] Executing built-in command \"kill\"\n");
+  printf("YuqiShell: Executing built-in command \"kill\"\n");
   if (argc > 3 || argc == 1) {
-    printf("[YuqiShell] kill: syntax error!\n\
-            [YuqiShell] kill: Usage: kill <pid>, kill -<SIGNAL> <pid>\n");
+    printf("YuqiShell: kill: syntax error!\n\
+            YuqiShell: kill: Usage: kill <pid>, kill -<SIGNAL> <pid>\n");
     return SYNTAX_ERROR;
   }
   if (argc == 2) {
     if (kill(atoi(argv[1]), SIGTERM) == -1) {
-      printf("[YuqiShell] kill: error: %s", strerror(errno));
+      printf("YuqiShell: kill: error: %s", strerror(errno));
       return OTHER_ERROR;
     }
   }
   else if (argc == 3) {
     if (*argv[1] != '-') {
-        printf("[YuqiShell] kill: syntax error!\n\
-                [YuqiShell] kill: Usage: kill <pid>, kill -<SIGNAL> <pid>\n");
+        printf("YuqiShell: kill: syntax error!\n\
+                YuqiShell: kill: Usage: kill <pid>, kill -<SIGNAL> <pid>\n");
         return SYNTAX_ERROR;
     }
     else {
@@ -43,7 +44,7 @@ cmd_kill(int argc, char** argv)
       else
           to_kill = atoi(argv[2]);
       if (kill(to_kill, atoi(sig)) == -1) {
-          printf("[YuqiShell] kill: error: %s", strerror(errno));
+          printf("YuqiShell: kill: error: %s\n", strerror(errno));
           return OTHER_ERROR;
       }
       return NORMAL;

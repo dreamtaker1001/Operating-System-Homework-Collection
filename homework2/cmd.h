@@ -6,6 +6,13 @@
 #include <sys/types.h>
 #include <dirent.h>
 
+/* the wildcard data structure */
+struct wildcard
+{
+  char* element;
+  struct wildcard *next;
+};
+
 /* cmd_which() function, 
  * which finds the target file in env PATH
  * args:
@@ -18,7 +25,7 @@
  *          non built-in commands.
  */
 int 
-cmd_which(int, char**, int);
+cmd_which(int, char**, int, char*);
 
 
 /* cmd_pwd() function,
@@ -46,6 +53,24 @@ cmd_ls(int, char**);
  */
 int
 ls_single(DIR*);
+
+/* ls_file() function,
+ * which prints the filename of a single file on the screen.
+ */
+void
+ls_file(char*);
+
+/* wildcard_handler() function
+ */
+struct wildcard
+*wildcard_handler(char*);
+
+/* ls_file_multi() function
+ * given a head of a linked list of filenames
+ * do the ls_file
+ */
+void
+ls_file_multi(struct wildcard*);
 
 /* cmd_pid() function,
  * this prints the pid of the current shell
@@ -108,4 +133,10 @@ print_history(int);
  */
 int
 cmd_kill(int, char**);
+
+/* is_wildcard() function
+ * returns 0 if not wildcard, 1 if *, 2 if ?, 3 if both
+ */
+int
+is_wildcard(char*);
 #endif
