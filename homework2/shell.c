@@ -10,6 +10,8 @@ char *p;
 char *env_path;
 char **env;
 char **env_tmp;
+unsigned int alarm_time;
+int alarm_enabled = 0;
 struct pathelement *path_list = NULL;
 struct pathelement *path_tmp = NULL;
 
@@ -130,6 +132,15 @@ before_exit(int status)
 int
 main(int argc, char** argv, char** envp)
 {
+  sigignore(SIGTSTP);
+  sigignore(SIGTERM);
+  if (argc > 2) {
+    printf("YuqiShell: too many arguments!\n");
+    return -1;
+  } else if (argc == 2) {
+    alarm_time = atoi(argv[1]);
+    alarm_enabled = 1;
+  }
   shell_init();
   int status = 0;
   env = envp;

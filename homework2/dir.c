@@ -17,8 +17,12 @@ int
 cmd_cd(int argc, char** argv)
 {
   int fd, reason;      
-  char *new_dir = NULL;
+  char *new_dir = (char*)calloc(1, sizeof(char[255]));
+  char *temp = (char*)calloc(1, sizeof(char[255]));
+  memset(temp, 0, 255);
+  memset(new_dir, 0, 255);
   printf("YuqiShell: Executing built-in command \"cd\"\n");
+  strcpy(temp, cwd);
   if (argc > 2) {
     printf("YuqiShell: cd: too many arguments! \n \
             YuqiShell: cd: Usage: cd <directory> OR cd OR cd -\n");
@@ -32,15 +36,18 @@ cmd_cd(int argc, char** argv)
     }
   }
   else if (argc == 2) {
-    if (argv[1] == "-") {
-      if (strcmp(last_dir, ""))
-        new_dir = last_dir;
-      else {
+    if (strcmp(argv[1], "-") == 0) {
+      if (strcmp(last_dir, "") == 0) {
         printf("YuqiShell: cd: error: do not have last dir yet!\n");
         return OTHER_ERROR;
       }
+      else {
+        strcpy(new_dir, last_dir);
+        //debug information
+        printf("debug: last dir was %s\n", last_dir);
+      }
     }
-    else new_dir = argv[1];
+    else strcpy(new_dir, argv[1]);
   }
 
   /* Changes the dir */
@@ -48,8 +55,8 @@ cmd_cd(int argc, char** argv)
     printf("YuqiShell: cd: error changing dir, %s\n", strerror(errno));
     return OTHER_ERROR;
   }
-  else close(fd);
-  strcpy(cwd, new_dir);
+  getcwd(cwd, 255);
+  strcpy(last_dir, temp);
   return NORMAL;
 }
 
@@ -107,6 +114,7 @@ cmd_ls(int argc, char** argv)
         strcpy(dir_to_list, argv[i]);
         if ((curr_dir=opendir(dir_to_list)) == NULL) 
           printf("YuqiShell: ls: error: %s\n", strerror(errno));
+        printf("\nin %s: \n", get_absolute_path(argv[i]));
         return_value = ls_single(curr_dir);
       }
       /* if sth is not dir (a file) */
@@ -147,6 +155,8 @@ struct wildcard
     strcat(pattern, "/");
     strcat(pattern, input);
   }
+  //debug information
+  //printf("debug: wildcard pattern is %s\n", pattern);
   glob(pattern, 0, NULL, &glob_buffer); 
   match_count = glob_buffer.gl_pathc;
 
@@ -246,6 +256,4 @@ cmd_pwd()
 {
   printf("%s\n", cwd);
 }
-
-
 

@@ -16,10 +16,10 @@ int
 cmd_printenv(int argc, char** argv, int mode)
 {
   if (mode == 0)
-    printf("[YuqiShell] Executing built-in command \"printenv\"\n");
+    printf("YuqiShell: Executing built-in command \"printenv\"\n");
   env_tmp = env;
   if (argc > 2) {
-    printf("[YuqiShell] printenv: too many arguments!\n");
+    printf("YuqiShell: printenv: too many arguments!\n");
     return SYNTAX_ERROR;
   }
   else if (argc == 1) {
@@ -35,7 +35,7 @@ cmd_printenv(int argc, char** argv, int mode)
       printf("%s=%s\n", argv[1], ptr_path);
     }
     else {
-      printf("[YuqiShell] printenv: env var %s not found!\n", argv[1]);
+      printf("YuqiShell: printenv: env var %s not found!\n", argv[1]);
       return OTHER_ERROR;
     }
   }
@@ -48,9 +48,9 @@ cmd_printenv(int argc, char** argv, int mode)
 int
 cmd_setenv(int argc, char** argv)
 {
-  printf("[YuqiShell] Executing built-in command \"setenv\"\n");
+  printf("YuqiShell: Executing built-in command \"setenv\"\n");
   if (argc > 3) {
-    printf("[YuqiShell] setenv: too many arguments!\n");
+    printf("YuqiShell: setenv: too many arguments!\n");
     return SYNTAX_ERROR;
   }
   else if (argc == 1) {
@@ -60,7 +60,7 @@ cmd_setenv(int argc, char** argv)
     char *ptr_path;
     ptr_path = getenv(argv[1]);
     if (ptr_path) {
-      printf("[YuqiShell] setenv: failed to build a new env variable: %s already exists!\n", argv[1]);
+      printf("YuqiShell: setenv: failed to build a new env variable: %s already exists!\n", argv[1]);
       return OTHER_ERROR;
     }
     else {
@@ -81,7 +81,7 @@ cmd_setenv(int argc, char** argv)
         char *new_dir = NULL;
         new_dir = getenv("HOME");
         if (chdir(new_dir) != 0) {
-            printf("[YuqiShell] cd: error changing dir, %s\n", strerror(errno));
+            printf("YuqiShell: cd: error changing dir, %s\n", strerror(errno));
             return OTHER_ERROR;
         }
         else close(fd);

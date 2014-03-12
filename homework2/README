@@ -1,0 +1,54 @@
+homework 2 README
+by Yuqi Liu.
+
+  yuqiliu AATT udel DoT EDUCATION
+
+========================
+ Program structure.
+------------------------
+
+   a. headers
+
+      shell.h: 
+        struct and function declarations about the shell environment.
+
+      cmd.h: 
+        struct and function decls about all built-in commands.
+
+      sighand.h: 
+        function decls for signal handler function.
+
+   b. C source files
+
+      shell.c:
+        Contains most of the global variables about the shell environment.
+        Also contains shell initialization functions and functions about
+        garbage collection.
+        Contains the MAIN function.
+      
+      cycle.c:
+        Contains functions used in every cycle of execution of the shell.
+        Makes judgments on whether the typed-in command is built-in cmds
+        or out-source ones and call the functions accordingly.
+
+      dir.c:
+        Contains functions of built-in cmd pwd, cd, ls and wildcard handlers.
+
+      env.c:
+        Contains functions of built-in cmd printenv and setenv.
+
+      exec.c:
+        Contains functions of executing out-source cmds. Also deals with
+        timeout options, which is extra credit~~~
+
+      self.c:
+        Contains functions about the environment of the shell itself:
+        pid, prompt, alias, history.
+
+      signal.c:
+        Deals with everything involved with signals. built-in cmds kill included.
+
+      which.c:
+        Contains functions on built-in cmds which. "where" makes use
+        of this too.
+

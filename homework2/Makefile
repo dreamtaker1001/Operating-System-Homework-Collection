@@ -22,7 +22,7 @@ env: shell.h cmd.h env.c
 which: shell.h cmd.h which.c
 	$(CC) $(FLAGS) -c which.c -o which.o
 
-signal: shell.h cmd.h signal.c
+signal: shell.h cmd.h sighand.h signal.c
 	$(CC) $(FLAGS) -c signal.c -o signal.o
 
 exec: shell.h cmd.h exec.c

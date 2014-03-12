@@ -1,5 +1,7 @@
 #include "shell.h"
 #include "cmd.h"
+#include <signal.h>
+#include "sighand.h"
 
 char* prompt;
 char* cwd;
@@ -22,6 +24,7 @@ respond_cycle()
   //printf("Process %d, Went into another cycle!\n", getpid());
   int cmd_count, return_value;
   printf("%s [%s]> ", prompt, cwd);
+  signal(SIGINT, sigint_handler);
   fgets(cmd_char, 255, stdin); 
   //debug information
   //printf("[YuqiShell] The last input cmd was %s\n", cmd_char);
@@ -63,6 +66,7 @@ prepare_for_next_cycle()
   }
   if (cmd_char) {
     cmd_char = (char*)realloc(cmd_char, sizeof(char[255]));
+    memset(cmd_char, 0, 255);
     //printf("Successfully reallocated cmd_char\n");
   }
   cmd_tmp = cmd_head;
@@ -112,17 +116,13 @@ int
 parse_cmd()
 {
   int count = 0;
-  /* EOF is not done!!!
-   
-  if (*cmd_char == -1) {
-    //debug information
-    printf("Caught EOF, shell will now exit!\n");
-    return EXIT_SHELL;
+  /* EOF */
+  if (strlen(cmd_char) == 0) {
+      printf("Caught EOF!\n");
+      return CMD_EMPTY;
   }
-  */
+  /* empty command */
   if (strcmp(cmd_char, "\n") == 0) {
-    //debug information
-    //printf("[YuqiShell] an empty command, will do nothing.\n");
     return CMD_EMPTY;
   }
 
@@ -132,7 +132,6 @@ parse_cmd()
   for (index = 0; index < strlen(cmd_char); index++) {
     if (cmd_char[index] == ' ')  {
         flag = 1;
-        //printf("[YuqiShell] There is a blank in the cmd line!\n");
     }
   }
   if (flag == 1) {
@@ -142,8 +141,6 @@ parse_cmd()
           if (cmd_head -> element == NULL) {
               cmd_head -> element = p;
               count++;
-              //debug information
-              //printf("[YuqiShell] The %dst input was %s\n", count, p);
           }
           else {
               cmd_tmp -> next = calloc(1, sizeof(cmd_head));
@@ -151,24 +148,13 @@ parse_cmd()
               cmd_tmp -> element = p;
               cmd_tmp -> next = NULL;
               count++;
-              //debug information
-              //printf("[YuqiShell] The %dst input was %s\n", count-1, p);
           }
       } while (p = strtok(NULL, " ")); 
-  // debug information
-  //int a;
-  //for (a = 1; a <= count; a++) {
-    //printf("[YuqiShell] The %dth element is %s!\n", count, cmd_head[count-1].element);
-  //}
   }
   else { /* when there is no blank */
       cmd_head->element = cmd_char;
       cmd_head->next = NULL;
       count = 1;
-      //debug information
-      //for (index = 0; index < strlen(cmd_head->element); index++)
-      //    printf("%d  ", cmd_head->element[index]);
-      //printf("\n");
   }
 
   cmd_tmp = cmd_head;
@@ -180,10 +166,6 @@ parse_cmd()
     cmd_tmp = cmd_tmp -> next;
     if (cmd_tmp == NULL) break;
   }
-  //debug information
-  //for (index = 0; index < argc; index++) {
-    //printf("%s\n", argv[index]);
-  //}
   return count; 
 }
 

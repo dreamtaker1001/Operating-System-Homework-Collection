@@ -1,5 +1,6 @@
 #include "shell.h"
 #include "cmd.h"
+#include "sighand.h"
 #include <signal.h>
 #include <sys/types.h>
 
@@ -11,6 +12,13 @@ extern char **env;
 extern char **env_tmp;
 char *last_dir;
 
+
+/* the signal handler for SIGINT */
+void
+sigint_handler()
+{
+  printf("SIGINT caught!\n");
+}
 
 /* cmd_kill() function
  */

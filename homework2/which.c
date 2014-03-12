@@ -40,7 +40,7 @@ cmd_which(int argc, char **argv, int mode, char* return_value)
     final_path = strcat(final_path, "/");
     if ((fd = open(final_path, O_RDONLY, 0)) == -1) {
         reason = access(final_path, X_OK);
-        if (errno == EACCES) 
+        if (errno == EACCES && mode != 3) 
             printf("YuqiShell: which: %s: permission denied!\n", final_path);
     }
     else close(fd);

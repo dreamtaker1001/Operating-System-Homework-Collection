@@ -21,7 +21,7 @@ cmd_pid(void)
 {
   pid_t curr_pid;
   curr_pid = getpid();
-  printf("[YuqiShell] pid: the pid of the current shell is %d!\n", curr_pid);
+  printf("YuqiShell: pid: the pid of the current shell is %d!\n", curr_pid);
 }
 
 /* cmd_prompt() function,
@@ -31,9 +31,9 @@ int
 cmd_prompt(int argc, char** argv)
 {
   if (argc > 2) {
-    printf("[YuqiShell] prompt: too many arguments!\n\
-            [YuqiShell] prompt: Usage: prompt <return>\n\
-            [YuqiShell] prompt: prompt <new_prompt> <return>\n");
+    printf("YuqiShell: prompt: too many arguments!\n\
+            YuqiShell: prompt: Usage: prompt <return>\n\
+            YuqiShell: prompt: prompt <new_prompt> <return>\n");
     return SYNTAX_ERROR;
   }
   else if (argc == 1) {
@@ -52,10 +52,10 @@ cmd_prompt(int argc, char** argv)
 int
 cmd_alias(int argc, char** argv)
 {
-  printf("[YuqiShell] Executing built-in command \"alias\"\n");
+  printf("YuqiShell: Executing built-in command \"alias\"\n");
   if (argc != 2) {
-    printf("[YuqiShell] alias: syntax error!\n\
-            [YuqiShell] alias: Usage: alias oldname=newname\n");
+    printf("YuqiShell: alias: syntax error!\n\
+            YuqiShell: alias: Usage: alias oldname=newname\n");
     return SYNTAX_ERROR;
   }
   int index = 0, flag = 0 ;
@@ -68,8 +68,8 @@ cmd_alias(int argc, char** argv)
     }
   }
   if (flag == 0 || tmp[0]=='=' || tmp[strlen(tmp)-1] == '=') {
-    printf("[YuqiShell] alias: syntax error!\n\
-            [YuqiShell] alias: Usage: alias oldname=newname\n");
+    printf("YuqiShell: alias: syntax error!\n\
+            YuqiShell: alias: Usage: alias oldname=newname\n");
     return SYNTAX_ERROR;
   }
   char* old_name = (char*)calloc(index, sizeof(char));
@@ -139,10 +139,10 @@ char
 void
 cmd_history(int argc, char** argv)
 {
-  printf("[YuqiShell] Executing built-in command \"history\"\n");
+  printf("YuqiShell: Executing built-in command \"history\"\n");
   if (argc > 2) {
-    printf("[YuqiShell] history: too many arguments!\n\
-            [YuqiShell] history: Usage: history <number>\n");
+    printf("YuqiShell: history: too many arguments!\n\
+            YuqiShell: history: Usage: history <number>\n");
     return;
   }
   if (argc == 1) 
@@ -160,7 +160,7 @@ print_history(int number)
   struct history *iter = hist_head;
   int count = number;
   if (hist_head -> cmd == NULL) {
-    printf("[YuqiShell] history: empty history.\n");
+    printf("YuqiShell: history: empty history.\n");
     return;
   }
   while(iter!=NULL && count > 0) {
