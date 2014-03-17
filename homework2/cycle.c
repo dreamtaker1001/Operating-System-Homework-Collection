@@ -33,6 +33,8 @@ respond_cycle()
   //debug information
   //printf("[YuqiShell] the last command was %d\n", *cmd_char);
   cmd_count = parse_cmd();
+  /* deal with background jobs */
+  bg_checkall();
   if (cmd_count == CMD_EMPTY)
       return CMD_EMPTY;
   else if (cmd_count == EXIT_SHELL)
@@ -45,8 +47,6 @@ respond_cycle()
   else if (return_value == SYNTAX_ERROR)
       return SYNTAX_ERROR;
 
-  /* deal with background jobs */
-  bg_checkall();
   return NORMAL;
 }
 

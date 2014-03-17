@@ -1,0 +1,56 @@
+CISC-663 Spring 2014
+README on programming assignment 3
+        by  Yuqi Liu
+
+==================================================
+1. implementation on background execution
+   of out-source commands.
+--------------------------------
+a. data structure.
+  I implemented an array of struct bg to save the
+  information about background processes. There is
+  an integer element called valid, which is used
+  to show whether the corresponding pid inside the
+  same struct is in the status of background exe-
+  cution. This array is used as a stack, of which
+  the top of stack pointer is bg_top.
+
+       0    1    2    3    4    5    6 ...
+     -----------------------------------
+     | bg | bg | bg | bg | bg | bg | bg |...
+     -----------------------------------
+   ^
+   |
+   top is initialized as -1.
+
+   bg = struct {pid_t pid, int valid};
+
+b. putting a process into background.
+   If the command line is ended up with &, then 
+   after the shell forked a new process, it waits
+   for the new process with an option WNOHANG, so
+   that the shell process can return immediately.
+   
+   Meanwhile, the process is added into the back-
+   ground array with a valid value 1.
+
+c. the "jobs" built-in command.
+   I implemented a "jobs" built-in command to make
+   it convenient to see what processes are in back-
+   ground execution. It just traverses the array and
+   print out all the background processes on the 
+   screen.
+
+d. the "fg" built-in command.
+   Did as the instructor asked to. Removes the very
+   process out of the array once it is put onto
+   foreground.
+
+e. Routinely check the bg processes.
+   The shell checks the status of all background
+   processes whenever the user entered a command.
+   The way to achieve this is to let the shell wait
+   for every process in the array with the WNOHANG
+   option. If waitpid failure, then the process is
+   no longer existed, I then remove the process from
+   the array and print the good news to the user.

@@ -150,11 +150,13 @@ pid_exist(pid_t test)
 void
 bg_checkall(void)
 {
+  //debug information
+  //printf("debug: in bg_checkall() function\n");
   int i;
   if (bg_top == -1)
       return;
   for (i = 0; i <= bg_top; i++) {
-    if (pid_exist(bg_list[i].pid) == 0) {
+    if ( waitpid(bg_list[i].pid, 0, WNOHANG) < 0) {
       printf("[ %d ] pid = %d  Done.\n", i, bg_list[i].pid);
       bg_remove(i);
     }
