@@ -32,6 +32,11 @@ cmd_kill(int argc, char** argv)
     return SYNTAX_ERROR;
   }
   if (argc == 2) {
+    /* color egg */
+    if (strcmp(argv[1], "gaozu") == 0) {
+      printf("Gaozu is killed! China Railway survived!!!\n");
+      return NORMAL;
+    }
     if (kill(atoi(argv[1]), SIGTERM) == -1) {
       printf("YuqiShell: kill: error: %s", strerror(errno));
       return OTHER_ERROR;

@@ -102,7 +102,7 @@ check_outer_cmd(int, char**);
  * find fixed path outsource cmds and execute if matched
  */
 int
-exec_fixed_path(char**);
+exec_fixed_path(int, char**);
 
 /* get_absolute_path() function,
  * do as its name shows...

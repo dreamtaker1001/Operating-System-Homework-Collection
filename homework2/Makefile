@@ -1,8 +1,8 @@
 CC=gcc
 FLAGS=-g
 
-all: shell.o cycle.o dir.o self.o env.o which.o signal.o exec.o
-	$(CC) $(FLAGS) shell.o cycle.o dir.o self.o env.o which.o signal.o exec.o -o yuqish
+all: shell.o cycle.o dir.o self.o env.o which.o signal.o exec.o bg.o
+	$(CC) $(FLAGS) shell.o cycle.o dir.o self.o env.o which.o signal.o exec.o bg.o -o yuqish
 
 shell: shell.h shell.c
 	$(CC) $(FLAGS) -c shell.c -o shell.o
@@ -27,6 +27,9 @@ signal: shell.h cmd.h sighand.h signal.c
 
 exec: shell.h cmd.h exec.c
 	$(CC) $(FLAGS) -c exec.c -o exec.o
+
+bg: util.h shell.h cmd.h bg.c
+	$(CC) $(FLAGS) -c bg.c -o bg.o
 
 clean:
 	rm -f yuqish *.o

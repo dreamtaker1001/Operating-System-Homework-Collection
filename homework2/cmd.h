@@ -3,8 +3,8 @@
 #include<fcntl.h>
 #include<errno.h>
 #include<sys/stat.h>
-#include <sys/types.h>
-#include <dirent.h>
+#include<sys/types.h>
+#include<dirent.h>
 
 /* the wildcard data structure */
 struct wildcard
@@ -139,4 +139,12 @@ cmd_kill(int, char**);
  */
 int
 is_wildcard(char*);
+
+/* cmd_fg() function.
+ * with no arguments, it just put the latest bg job back;
+ * with one argument, it put the process with the input
+ *   job number back.
+ */
+int
+cmd_fg(int, char**);
 #endif

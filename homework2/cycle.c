@@ -1,5 +1,6 @@
 #include "shell.h"
 #include "cmd.h"
+#include "util.h"
 #include <signal.h>
 #include "sighand.h"
 
@@ -44,6 +45,8 @@ respond_cycle()
   else if (return_value == SYNTAX_ERROR)
       return SYNTAX_ERROR;
 
+  /* deal with background jobs */
+  bg_checkall();
   return NORMAL;
 }
 
@@ -250,6 +253,13 @@ find_cmd()
   /* kill */
   else if (strcmp(cmd_head->element, "kill") == 0) {
     return cmd_kill(argc, argv);
+  }
+  /* jobs */
+  else if (strcmp(cmd_head->element, "jobs") == 0) {
+    bg_show();
+  }
+  else if (strcmp(cmd_head->element, "fg") == 0) {
+    cmd_fg(argc, argv);
   }
   else if (check_outer_cmd(argc, argv) == NORMAL) {
     return NORMAL;

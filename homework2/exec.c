@@ -1,6 +1,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include "shell.h"
+#include "util.h"
 #include "cmd.h"
 
 extern char **env;
@@ -18,14 +19,14 @@ check_outer_cmd(int argc, char** argv)
       strncmp(argv[0], "./", 2) == 0 ||
       strncmp(argv[0], "../", 3) == 0) {
     argv[0] = get_absolute_path(argv[0]);
-    exec_fixed_path(argv);
+    exec_fixed_path(argc, argv);
   }
   else {
     if (cmd_which(argc, argv, 3, argv[0]) != 0) {
       printf("YuqiShell: command not found!\n");
       return OTHER_ERROR;
     }
-    exec_fixed_path(argv);
+    exec_fixed_path(argc, argv);
   }
   return NORMAL;
 }
@@ -76,7 +77,7 @@ char
  * find fixed path outsource cmds and execute if matched
  */
 int
-exec_fixed_path(char** argv)
+exec_fixed_path(int argc, char** argv)
 {
     pid_parent = pid_exec = pid_watchdog = 0;
     char* given_path = argv[0];
@@ -84,6 +85,12 @@ exec_fixed_path(char** argv)
     pid_parent = getpid();
     pid_t pid;
     int status;
+    int bg_enabled = 0;
+
+    /* enabling background execution of out-source cmds. */
+    if (strcmp(argv[argc - 1], "&") == 0) 
+        bg_enabled = 1;
+    /* test whether object path is executable */
     if (access(given_path, X_OK) == -1) {
         printf("YuqiShell: error: %s\n", strerror(errno));
         return OTHER_ERROR;
@@ -104,7 +111,7 @@ exec_fixed_path(char** argv)
     else if (pid == 0) {
         pid_exec = getpid();
         //debug information
-        printf("debug: child process pid=%d running!\n", pid_exec);
+        //printf("debug: child process pid=%d running!\n", pid_exec);
         execve(given_path, argv, env); 
         printf("YuqiShell: error: Can't execute %s\n", given_path);
         return OTHER_ERROR;
@@ -122,7 +129,7 @@ exec_fixed_path(char** argv)
         else if (pid == 0) {
             pid_watchdog = getpid();
             //debug information
-            printf("debug: watchdog process pid=%d running!\n", pid_watchdog);
+            //printf("debug: watchdog process pid=%d running!\n", pid_watchdog);
 
             sleep(alarm_time);
             if (kill(pid_exec, 0) != -1) {
@@ -132,11 +139,25 @@ exec_fixed_path(char** argv)
             exit(0);
         }
     }
+    /* ready to wait for the process, but has to specify the
+     * OPTION value first.
+     * When OPTION value is 0, then wait normally;
+     * when OPTION value is WNOHANG, then the waitpid function
+     * returns immediately.
+     */
+    int option;
+    if (bg_enabled) {
+        option = WNOHANG;
+        bg_add(pid_exec);
+    }
+    else
+        option = 0;
+
     /* father process still waiting for pid_exec.
      * Once pid_exec returns or terminated by watchdog,
      * father process can continue execution.
      */
-    if ((pid_exec=waitpid(pid_exec, &status, 0)) < 0) {
+    if ((pid_exec=waitpid(pid_exec, &status, option)) < 0) {
       printf("YuqiShell: error: waitpid error!\n");
       return OTHER_ERROR;
       printf("YuqiShell: returned value %d\n", status);

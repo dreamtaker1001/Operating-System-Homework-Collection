@@ -1,4 +1,5 @@
 #include "shell.h"
+#include "util.h"
 
 extern char *prompt;
 extern char *cwd;
@@ -38,6 +39,7 @@ shell_init(void)
    * as well as my hands are cut as a consequence...
    */
   strcpy(prompt, "liuyuqi");
+  bg_init();
 
   path_list = get_path();
   print_env_path();
