@@ -147,4 +147,9 @@ is_wildcard(char*);
  */
 int
 cmd_fg(int, char**);
+
+/* cmd_warnload() function.
+ */
+void
+cmd_warnload(int, char**);
 #endif

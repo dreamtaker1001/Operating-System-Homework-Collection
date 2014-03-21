@@ -1,8 +1,10 @@
 CC=gcc
 FLAGS=-g
+#allflag=-g -lpthread -lkstat -DHAVE_KSTAT
+allflag=-g -lpthread -DHAVE_KSTAT 
 
-all: shell.o cycle.o dir.o self.o env.o which.o signal.o exec.o bg.o
-	$(CC) $(FLAGS) shell.o cycle.o dir.o self.o env.o which.o signal.o exec.o bg.o -o yuqish
+all: shell.o cycle.o dir.o self.o env.o which.o signal.o exec.o bg.o warnload.o
+	$(CC) $(allflag) shell.o cycle.o dir.o self.o env.o which.o signal.o exec.o bg.o warnload.o -o yuqish
 
 shell: shell.h shell.c
 	$(CC) $(FLAGS) -c shell.c -o shell.o
@@ -30,6 +32,9 @@ exec: shell.h cmd.h exec.c
 
 bg: util.h shell.h cmd.h bg.c
 	$(CC) $(FLAGS) -c bg.c -o bg.o
+
+warnload: util.h shell.h cmd.h warnload.c
+	$(CC) $(allflag) -c warnload.c -o warnload.o
 
 clean:
 	rm -f yuqish *.o

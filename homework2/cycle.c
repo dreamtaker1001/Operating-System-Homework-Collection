@@ -258,8 +258,13 @@ find_cmd()
   else if (strcmp(cmd_head->element, "jobs") == 0) {
     bg_show();
   }
+  /* fg */
   else if (strcmp(cmd_head->element, "fg") == 0) {
     cmd_fg(argc, argv);
+  }
+  /* warnload */
+  else if (strcmp(cmd_head->element, "warnload") == 0) {
+    cmd_warnload(argc, argv);
   }
   else if (check_outer_cmd(argc, argv) == NORMAL) {
     return NORMAL;

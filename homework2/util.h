@@ -31,4 +31,12 @@ pid_exist(pid_t);
 void
 bg_checkall();
 
+/* check the load of the system and action if necessary */
+static void
+*checkload();
+
+/* gets the system load for 1 min */
+int 
+get_load(double*);
+
 #endif
