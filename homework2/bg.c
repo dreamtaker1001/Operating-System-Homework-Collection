@@ -8,6 +8,7 @@
 
 struct bg bg_list[MAXBG];
 int bg_top;
+int sid;
 
 /* the initialization function for background execution */
 void
@@ -19,6 +20,7 @@ bg_init(void)
     bg_list[i].valid = 0;
   }
   bg_top = -1;
+  sid = -1;
 }
 
 /* show all background jobs */
@@ -98,6 +100,7 @@ cmd_fg(int argc, char** argv)
             if (pid_exist(to_call)) {
                 /* start to wait for the process */
                 bg_remove(i);
+                setpgid(to_call, getpgrp());
                 if (waitpid(to_call, 0, 0) < 0) {
                     printf("YuqiShell: error: waitpid error!\n");
                     return OTHER_ERROR;

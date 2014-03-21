@@ -7,6 +7,7 @@
 extern char **env;
 extern unsigned int alarm_time;
 extern int alarm_enabled;
+extern int sid;
 pid_t pid_parent, pid_exec, pid_watchdog;
 
 /* check_outer_cmd() function
@@ -110,6 +111,9 @@ exec_fixed_path(int argc, char** argv)
     /* inside the execution process */
     else if (pid == 0) {
         pid_exec = getpid();
+        /* Setting sid, start a new session for background execution */
+        if (bg_enabled)
+            sid = setsid();
         //debug information
         //printf("debug: child process pid=%d running!\n", pid_exec);
         execve(given_path, argv, env); 
