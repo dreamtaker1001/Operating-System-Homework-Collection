@@ -266,6 +266,10 @@ find_cmd()
   else if (strcmp(cmd_head->element, "warnload") == 0) {
     cmd_warnload(argc, argv);
   }
+  /* watchuser */
+  else if (strcmp(cmd_head->element, "watchuser") == 0) {
+    cmd_watchuser(argc, argv);
+  }
   else if (check_outer_cmd(argc, argv) == NORMAL) {
     return NORMAL;
   }

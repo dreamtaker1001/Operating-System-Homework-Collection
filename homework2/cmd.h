@@ -152,4 +152,9 @@ cmd_fg(int, char**);
  */
 void
 cmd_warnload(int, char**);
+
+/* cmd_watchuser() function.
+ */
+void
+cmd_watchuser(int, char**);
 #endif

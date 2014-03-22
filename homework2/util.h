@@ -39,4 +39,8 @@ static void
 int 
 get_load(double*);
 
+/* gets the currently logged-in users */
+void
+get_all_users(void);
+
 #endif
