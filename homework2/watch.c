@@ -6,6 +6,7 @@
 
 struct utmpx *up;
 pthread_t user_tid = 0;
+pthread_mutex_t watchlist_mutex_lock = PTHREAD_MUTEX_INITIALIZER;
 
 struct userlist {
     struct utmpx element;
@@ -53,18 +54,24 @@ cmd_watchuser(int argc, char **argv)
     }
     /* start the thread if not exist */
     if (user_tid == 0) {
+        pthread_mutex_lock(&watchlist_mutex_lock);
         watchlist_init();
+        pthread_mutex_unlock(&watchlist_mutex_lock);
         pthread_create(&user_tid, NULL, watch_user_deamon, "watchuser");
     }
     /* watchuser username */
     if (argc == 2) {
+        pthread_mutex_lock(&watchlist_mutex_lock);
         watchlist_add(argv[1]);
+        pthread_mutex_unlock(&watchlist_mutex_lock);
         return;
     }
     /* watchuser username off */
     if (argc == 3) {
         if (strcmp (argv[2], "off") == 0) {
+            pthread_mutex_lock(&watchlist_mutex_lock);
             watchlist_remove(argv[1]);
+            pthread_mutex_unlock(&watchlist_mutex_lock);
         }
     }
 }
@@ -135,31 +142,28 @@ watchlist_remove(char* to_remove)
 /* adds a record to a watchlist element */
 void
 ut_insert(struct watchlist *tmpwatch,
-            struct userlist *list_head, 
             struct utmpx to_insert)
 {
     struct userlist *tmp = (struct userlist*)malloc(sizeof(struct userlist));
-    tmp->next = list_head;
-    list_head = tmp;
+    tmp->next = tmpwatch->head;
+    tmpwatch->head = tmp;
 
+    assert(tmpwatch->head);
     /* doing the first time copy */
     tmp->element = to_insert;
-    //debug information
-    printf("inserted user=%s, line=%s, host=%s\n", (tmp->element).ut_user, (tmp->element).ut_line, (tmp->element).ut_host);
 }
 
 /* deletes a record from a watchlist element */
 void
 ut_remove(struct watchlist *tmpwatch,
-            struct userlist *list_head,
             struct userlist *to_remove)
 {
-    struct userlist *tmp = list_head;
+    struct userlist *tmp = tmpwatch->head;
     struct userlist *tmp2;
     while(tmp) {
         if (tmp == to_remove) {
             if (tmp2 == NULL) {
-                list_head->next = tmp->next;
+                (tmpwatch->head)->next = tmp->next;
                 free(tmp);
             }
             else {
@@ -182,7 +186,9 @@ new_user_init(struct watchlist *tmpwatch)
     while (tmpuser) {
         /* match user */
         if (strcmp(tmpwatch->name, (tmpuser->element).ut_user) == 0) {
-            ut_insert(tmpwatch, tmpwatch->head, tmpuser->element);
+            ut_insert(tmpwatch, tmpuser->element);
+            //debug information
+            printf("inserted 1 for new user\n");
         }
         tmpuser = tmpuser->next;
     }
@@ -192,24 +198,21 @@ new_user_init(struct watchlist *tmpwatch)
 
 /* search for new logins */
 void
-scan_for_new_login(struct userlist* tmplist,
-                    struct watchlist *tmpwatch)
+scan_for_new_login(struct watchlist *tmpwatch)
 {
     struct userlist *tmpu = user_head;
-    struct userlist *tmpw = tmplist;
+    struct userlist *tmpw = tmpwatch->head;
     int flag = 0;
     while(tmpu) {
-        //debug information
-        //printf("In tmpu\n");
         if (strcmp((tmpu->element).ut_user, tmpwatch->name) != 0) {
             tmpu = tmpu -> next;
             continue;
         }
         flag = 0;
-        tmpw = tmplist;
+        tmpw = tmpwatch->head;
         while(tmpw) {
             //debug information
-            printf("in tmpw: u.user=%s, w.user=%s; u.line=%s, w.line=%s; u.host=%s, w.host=%s\n", (tmpw->element).ut_user, (tmpu->element).ut_user, (tmpw->element).ut_line, (tmpu->element).ut_line, (tmpw->element).ut_host, (tmpu->element).ut_host);
+            //printf("in tmpw: u.user=%s, w.user=%s; u.line=%s, w.line=%s; u.host=%s, w.host=%s\n", (tmpw->element).ut_user, (tmpu->element).ut_user, (tmpw->element).ut_line, (tmpu->element).ut_line, (tmpw->element).ut_host, (tmpu->element).ut_host);
 
             if (strcmp((tmpw->element).ut_user, (tmpu->element).ut_user) == 0 &&
                     strcmp((tmpw->element).ut_line, (tmpu->element).ut_line) == 0 &&
@@ -231,19 +234,19 @@ scan_for_new_login(struct userlist* tmplist,
 
 /* search for new exit */
 void
-scan_for_new_exit(struct userlist* tmplist,
-                    struct watchlist* tmpwatch)
+scan_for_new_exit(struct watchlist* tmpwatch)
 {
     struct userlist *tmpu = user_head;
-    struct userlist *tmpw = tmplist;
-    int flag = 1;
+    struct userlist *tmpw = tmpwatch->head;
+    int flag = 0;
     while(tmpw) {
+        flag = 0;
+        tmpu = user_head;
         while(tmpu) {
             if (strcmp((tmpu->element).ut_user, tmpwatch->name) != 0) {
                 tmpu = tmpu -> next;
                 continue;
             }
-            flag = 0;
             if (strcmp((tmpw->element).ut_user, (tmpu->element).ut_user) == 0 &&
                     strcmp((tmpw->element).ut_line, (tmpu->element).ut_line) == 0 &&
                     strcmp((tmpw->element).ut_host, (tmpu->element).ut_host) == 0) {
@@ -266,11 +269,8 @@ scan_for_new_exit(struct userlist* tmplist,
 void
 compare_old(struct watchlist *tmpwatch)
 {
-    struct userlist* tmplist = tmpwatch->head;
-    //debug information
-    assert(tmplist);
-    scan_for_new_login(tmplist, tmpwatch);
-    scan_for_new_exit(tmplist, tmpwatch);
+    scan_for_new_login(tmpwatch);
+    scan_for_new_exit(tmpwatch);
 }
 
 /* Compare the value of watched users and assign new values */
@@ -281,19 +281,14 @@ compare_value()
     struct watchlist* tmpwatch = watchlist_head;
     while(tmpwatch) {
         strcpy (usernow, tmpwatch -> name);
-        //debug information
-        printf("Comparing value for %s!\n", usernow);
         /* If the user was just added into watchlist, first time scan */
         if (tmpwatch->count == -1) {
-            //debug information
-            printf("This is a new user, calling new_user_init()\n");
             new_user_init(tmpwatch);
         }
         /* Scan old entry for existence and compare the value */
         else compare_old(tmpwatch); 
         tmpwatch = tmpwatch->next;
     }
-    tmpwatch = watchlist_head;
 }
 
 /* copy the new status to watchlist */
@@ -302,13 +297,11 @@ adjust_watchlist()
 {
     struct watchlist *tmpwatch = watchlist_head;
     struct userlist *tmpuser = user_head;
-    struct userlist *tmplist;
     while (tmpwatch) {
         tmpwatch->head = NULL;
-        tmplist = tmpwatch->head;
         while (tmpuser) {
             if (strcmp((tmpuser->element).ut_user, tmpwatch->name) == 0)
-                ut_insert (tmpwatch, tmplist, tmpuser->element);
+                ut_insert (tmpwatch, tmpuser->element);
             tmpuser = tmpuser->next;
         }
         tmpwatch = tmpwatch->next;
@@ -322,8 +315,10 @@ void
         user_head = NULL;
         get_all_users();
         //show_all_users();
+        pthread_mutex_lock(&watchlist_mutex_lock);
         compare_value();
         adjust_watchlist();
+        pthread_mutex_unlock(&watchlist_mutex_lock);
         sleep(2);
     }
 }
