@@ -28,9 +28,9 @@ struct watchlist *watchlist_head;
 void
 show_all_users(void);
 
-/* the deamon for watching users */
+/* the daemon for watching users */
 void
-*watch_user_deamon(void);
+*watch_user_daemon(void);
 
 /* init function for watchlist */
 void
@@ -57,7 +57,7 @@ cmd_watchuser(int argc, char **argv)
         pthread_mutex_lock(&watchlist_mutex_lock);
         watchlist_init();
         pthread_mutex_unlock(&watchlist_mutex_lock);
-        pthread_create(&user_tid, NULL, watch_user_deamon, "watchuser");
+        pthread_create(&user_tid, NULL, watch_user_daemon, "watchuser");
     }
     /* watchuser username */
     if (argc == 2) {
@@ -309,7 +309,7 @@ adjust_watchlist()
 }
 
 void
-*watch_user_deamon(void)
+*watch_user_daemon(void)
 {
     while(1) {
         user_head = NULL;

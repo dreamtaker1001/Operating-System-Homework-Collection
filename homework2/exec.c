@@ -62,6 +62,11 @@ char
     //debug information
     //printf("debug: parent dir is %s\n", first_half);
   }
+  /* written for watchmail */
+  else if (given_path[0] != '/') {
+        getcwd(first_half, 128);
+        strcpy(second_half, given_path);
+  }
   else {
     strcpy(absolute_path, given_path);
     return absolute_path;

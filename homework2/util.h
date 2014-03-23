@@ -43,4 +43,20 @@ get_load(double*);
 void
 get_all_users(void);
 
+/* adds a watchmail option */
+void
+watchmail_add(char*);
+
+/* the daemon thread for watchmail */
+void
+*mail_daemon(void *);
+
+/* remove a watchmail option */
+void
+watchmail_remove(char*);
+
+/* finds whether a mail is already in watch */
+struct maillist *
+find_mail_in_watch(char *);
+
 #endif

@@ -157,4 +157,9 @@ cmd_warnload(int, char**);
  */
 void
 cmd_watchuser(int, char**);
+
+/* cmd_watchmail() function.
+ */
+void
+cmd_watchmail(int, char**);
 #endif

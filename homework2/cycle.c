@@ -270,6 +270,10 @@ find_cmd()
   else if (strcmp(cmd_head->element, "watchuser") == 0) {
     cmd_watchuser(argc, argv);
   }
+  /* watchmail */
+  else if (strcmp(cmd_head->element, "watchmail") == 0) {
+    cmd_watchmail(argc, argv);
+  }
   else if (check_outer_cmd(argc, argv) == NORMAL) {
     return NORMAL;
   }
