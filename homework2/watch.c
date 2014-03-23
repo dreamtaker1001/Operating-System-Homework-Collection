@@ -18,7 +18,8 @@ struct userlist *tmp2 = NULL;
 int watchlist_count;
 struct watchlist {
     char name[255];
-    struct utmpx element;
+    struct userlist *head;
+    int count;
     struct watchlist *next;
 };
 struct watchlist *watchlist_head;
@@ -78,19 +79,22 @@ watchlist_add(char* to_add)
             printf("YuqiShell: username %s already in watch!\n", to_add);
             return;
         }
-        if (tmp->next)
-            tmp = tmp->next;
+        tmp = tmp->next;
     }
     /* to_add is not in watch yet, critical section starts*/
     tmp = (struct watchlist*)malloc(sizeof(struct watchlist));
     strcpy (tmp->name, to_add);
-    strcpy ((tmp->element).ut_user, "__init");
+    tmp->head = NULL;
+    tmp->count = -1;
     if (watchlist_head == NULL) {
         watchlist_head = tmp;
         watchlist_head -> next = NULL;
     }
-    tmp -> next = watchlist_head -> next;
-    watchlist_head -> next = tmp;
+    else {
+        tmp -> next = watchlist_head;
+        watchlist_head = tmp;
+    }
+    printf("Added user to watch: %s\n", to_add);
     /* added, critical section over */
 }
 
@@ -99,9 +103,11 @@ watchlist_remove(char* to_remove)
 {
     struct watchlist *tmp, *tmplast = NULL;
     tmp = watchlist_head;
+    int flag = 0;
     /* search */
     while (tmp) {
         if (strcmp(to_remove, tmp->name) == 0) {
+            flag = 1;
             break;
         }
         if (tmp->next) {
@@ -109,7 +115,7 @@ watchlist_remove(char* to_remove)
             tmp = tmp->next;
         }
     }
-    if (tmp->next == NULL) {
+    if (flag = 0) {
         printf("YuqiShell: there's no user called %s in watch!", to_remove);
         return;
     }
@@ -126,32 +132,186 @@ watchlist_remove(char* to_remove)
     /* critical section over */
 }
 
+/* adds a record to a watchlist element */
+void
+ut_insert(struct watchlist *tmpwatch,
+            struct userlist *list_head, 
+            struct utmpx to_insert)
+{
+    struct userlist *tmp = (struct userlist*)malloc(sizeof(struct userlist));
+    tmp->next = list_head;
+    list_head = tmp;
+
+    /* doing the first time copy */
+    tmp->element = to_insert;
+    //debug information
+    printf("inserted user=%s, line=%s, host=%s\n", (tmp->element).ut_user, (tmp->element).ut_line, (tmp->element).ut_host);
+}
+
+/* deletes a record from a watchlist element */
+void
+ut_remove(struct watchlist *tmpwatch,
+            struct userlist *list_head,
+            struct userlist *to_remove)
+{
+    struct userlist *tmp = list_head;
+    struct userlist *tmp2;
+    while(tmp) {
+        if (tmp == to_remove) {
+            if (tmp2 == NULL) {
+                list_head->next = tmp->next;
+                free(tmp);
+            }
+            else {
+                tmp2->next = tmp->next;
+                free(tmp);
+            }
+            break;
+        }
+        tmp2 = tmp;
+        tmp = tmp -> next;
+    }
+}
+
+/* Do the initialization for a new watched user */
+void
+new_user_init(struct watchlist *tmpwatch)
+{
+    struct userlist* tmpuser = user_head;
+    tmpwatch->head = NULL;
+    while (tmpuser) {
+        /* match user */
+        if (strcmp(tmpwatch->name, (tmpuser->element).ut_user) == 0) {
+            ut_insert(tmpwatch, tmpwatch->head, tmpuser->element);
+        }
+        tmpuser = tmpuser->next;
+    }
+    if (tmpwatch->count == -1)
+        tmpwatch->count = 1;
+}
+
+/* search for new logins */
+void
+scan_for_new_login(struct userlist* tmplist,
+                    struct watchlist *tmpwatch)
+{
+    struct userlist *tmpu = user_head;
+    struct userlist *tmpw = tmplist;
+    int flag = 0;
+    while(tmpu) {
+        //debug information
+        //printf("In tmpu\n");
+        if (strcmp((tmpu->element).ut_user, tmpwatch->name) != 0) {
+            tmpu = tmpu -> next;
+            continue;
+        }
+        flag = 0;
+        tmpw = tmplist;
+        while(tmpw) {
+            //debug information
+            printf("in tmpw: u.user=%s, w.user=%s; u.line=%s, w.line=%s; u.host=%s, w.host=%s\n", (tmpw->element).ut_user, (tmpu->element).ut_user, (tmpw->element).ut_line, (tmpu->element).ut_line, (tmpw->element).ut_host, (tmpu->element).ut_host);
+
+            if (strcmp((tmpw->element).ut_user, (tmpu->element).ut_user) == 0 &&
+                    strcmp((tmpw->element).ut_line, (tmpu->element).ut_line) == 0 &&
+                    strcmp((tmpw->element).ut_host, (tmpu->element).ut_host) == 0) {
+                flag = 1;
+                break;
+            }
+            tmpw = tmpw->next;
+        }
+        if (flag == 0) {
+            printf("YuqiShell: watchuser: %s has logged on %s from %s!\n", 
+                    (tmpu->element).ut_user,
+                    (tmpu->element).ut_line,
+                    (tmpu->element).ut_host);
+        }
+        tmpu = tmpu->next;
+    }
+}
+
+/* search for new exit */
+void
+scan_for_new_exit(struct userlist* tmplist,
+                    struct watchlist* tmpwatch)
+{
+    struct userlist *tmpu = user_head;
+    struct userlist *tmpw = tmplist;
+    int flag = 1;
+    while(tmpw) {
+        while(tmpu) {
+            if (strcmp((tmpu->element).ut_user, tmpwatch->name) != 0) {
+                tmpu = tmpu -> next;
+                continue;
+            }
+            flag = 0;
+            if (strcmp((tmpw->element).ut_user, (tmpu->element).ut_user) == 0 &&
+                    strcmp((tmpw->element).ut_line, (tmpu->element).ut_line) == 0 &&
+                    strcmp((tmpw->element).ut_host, (tmpu->element).ut_host) == 0) {
+                flag = 1;
+                break;
+            }
+            tmpu = tmpu->next;
+        }
+        if (flag == 0) {
+            printf("YuqiShell: watchuser: %s has logged off %s from %s!\n", 
+                    (tmpw->element).ut_user,
+                    (tmpw->element).ut_line,
+                    (tmpw->element).ut_host);
+        }
+        tmpw = tmpw->next;
+    }
+}
+
+/* Do the comparison for old entries */
+void
+compare_old(struct watchlist *tmpwatch)
+{
+    struct userlist* tmplist = tmpwatch->head;
+    //debug information
+    assert(tmplist);
+    scan_for_new_login(tmplist, tmpwatch);
+    scan_for_new_exit(tmplist, tmpwatch);
+}
+
 /* Compare the value of watched users and assign new values */
 void
 compare_value()
 {
     char usernow[32];
     struct watchlist* tmpwatch = watchlist_head;
-    struct userlist* tmpuser = user_head;
     while(tmpwatch) {
         strcpy (usernow, tmpwatch -> name);
-        tmpuser = user_head;
-        while(tmpuser && strcmp ((tmpuser->element).ut_user, usernow) == 0) {
-            if (strcmp ((tmpwatch->element).ut_user, "__init") != 0) {    
-                if (strcmp((tmpwatch->element).ut_line, (tmpuser->element).ut_line) != 0 ||
-                         strcmp((tmpwatch->element).ut_host, (tmpuser->element).ut_host) != 0) {
-                    printf("YuqiShell: watchuser: %s has logged on %s from %s \n", (tmpuser->element).ut_user, (tmpuser->element).ut_line, (tmpuser->element).ut_host);
-                }
-                strcpy( (tmpwatch->element).ut_user, (tmpuser->element).ut_user);
-                strcpy( (tmpwatch->element).ut_line, (tmpuser->element).ut_line);
-                strcpy( (tmpwatch->element).ut_host, (tmpuser->element).ut_host);
-            }
-            if (tmpuser->next)
-                tmpuser = tmpuser->next;
-            else break;
+        //debug information
+        printf("Comparing value for %s!\n", usernow);
+        /* If the user was just added into watchlist, first time scan */
+        if (tmpwatch->count == -1) {
+            //debug information
+            printf("This is a new user, calling new_user_init()\n");
+            new_user_init(tmpwatch);
         }
-        if (tmpwatch->next)
-            tmpwatch = tmpwatch->next;
+        /* Scan old entry for existence and compare the value */
+        else compare_old(tmpwatch); 
+        tmpwatch = tmpwatch->next;
+    }
+    tmpwatch = watchlist_head;
+}
+
+/* copy the new status to watchlist */
+void
+adjust_watchlist()
+{
+    struct watchlist *tmpwatch = watchlist_head;
+    struct userlist *tmpuser = user_head;
+    struct userlist *tmplist;
+    while (tmpwatch) {
+        tmpwatch->head = NULL;
+        tmplist = tmpwatch->head;
+        while (tmpuser) {
+            if (strcmp((tmpuser->element).ut_user, tmpwatch->name) == 0)
+                ut_insert (tmpwatch, tmplist, tmpuser->element);
+            tmpuser = tmpuser->next;
+        }
+        tmpwatch = tmpwatch->next;
     }
 }
 
@@ -159,9 +319,12 @@ void
 *watch_user_deamon(void)
 {
     while(1) {
+        user_head = NULL;
         get_all_users();
+        //show_all_users();
         compare_value();
-        sleep(5);
+        adjust_watchlist();
+        sleep(2);
     }
 }
 
@@ -180,21 +343,16 @@ get_all_users()
     while (up = getutxent() ) {
         if (up -> ut_type == USER_PROCESS) {
             tmp = (struct userlist*)malloc(sizeof(struct userlist));
-            tmp -> next = NULL;
-            if (user_head == NULL)
+            if (user_head == NULL) {
+                tmp->next = NULL;
                 user_head = tmp;
+            }
             else {
-                tmp2 = user_head;
-                while(tmp2 -> next)
-                    tmp2 = tmp2 -> next;
-                tmp2 -> next = tmp;
+                tmp->next = user_head;
+                user_head = tmp;
             }
             tmp -> element = *up;
         }
-    }
-    if (user_head) { 
-        free(user_head);
-        user_head = NULL;
     }
 }
 

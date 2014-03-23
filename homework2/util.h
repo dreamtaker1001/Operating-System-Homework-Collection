@@ -1,6 +1,6 @@
 #ifndef H_UTIL
 #define H_UTIL
-
+#include <assert.h>
 /* the data structure for background jobs */
 struct bg {
   pid_t pid;
