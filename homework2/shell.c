@@ -13,6 +13,7 @@ char **env;
 char **env_tmp;
 unsigned int alarm_time;
 int alarm_enabled = 0;
+extern int noclobber;
 struct pathelement *path_list = NULL;
 struct pathelement *path_tmp = NULL;
 
@@ -45,6 +46,7 @@ shell_init(void)
   print_env_path();
   alias_init();
   history_init();
+  noclobber = 0;
 }
 
 /* This initializes the alias system */

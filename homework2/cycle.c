@@ -274,6 +274,10 @@ find_cmd()
   else if (strcmp(cmd_head->element, "watchmail") == 0) {
     cmd_watchmail(argc, argv);
   }
+  /* noclobber */
+  else if (strcmp(cmd_head->element, "noclobber") == 0) {
+    cmd_noclobber(argc, argv);
+  }
   else if (check_outer_cmd(argc, argv) == NORMAL) {
     return NORMAL;
   }

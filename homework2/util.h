@@ -59,4 +59,24 @@ watchmail_remove(char*);
 struct maillist *
 find_mail_in_watch(char *);
 
+/* checks whether command line contains redirects */
+int
+check_rd(int, char**);
+
+/* gets the file to operate when rd is enabled */
+char*
+get_rd_file(int, char**, int);
+
+/* turn the redirection mode on */
+void
+rd_handler_on(pid_t);
+
+/* switch the output file to specified */
+void
+switch_out();
+
+/* switch the input file to specified */
+void
+switch_in_on();
+
 #endif

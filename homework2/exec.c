@@ -16,20 +16,36 @@ pid_t pid_parent, pid_exec, pid_watchdog;
 int
 check_outer_cmd(int argc, char** argv)
 {
-  if (strncmp(argv[0], "/", 1) == 0 ||
-      strncmp(argv[0], "./", 2) == 0 ||
-      strncmp(argv[0], "../", 3) == 0) {
-    argv[0] = get_absolute_path(argv[0]);
-    exec_fixed_path(argc, argv);
-  }
-  else {
-    if (cmd_which(argc, argv, 3, argv[0]) != 0) {
-      printf("YuqiShell: command not found!\n");
-      return OTHER_ERROR;
+    /* deals with redirect stuff first */
+    int rd_position = check_rd(argc, argv);
+    if (rd_position > 0) {
+        argc = rd_position;
+        char** argvnew = (char**)malloc((argc+1)*sizeof(char**));
+        int i;
+        for (i = 0; i < argc; i++) {
+            argvnew[i] = (char*)calloc(1, sizeof(char[128]));
+            strcpy(argvnew[i], argv[i]);
+        }
+        argv = argvnew;
     }
-    exec_fixed_path(argc, argv);
-  }
-  return NORMAL;
+    else if (rd_position < 0) {
+        return SYNTAX_ERROR;
+    }
+    /* analyse the outer cmd */
+    if (strncmp(argv[0], "/", 1) == 0 ||
+            strncmp(argv[0], "./", 2) == 0 ||
+            strncmp(argv[0], "../", 3) == 0) {
+        argv[0] = get_absolute_path(argv[0]);
+        exec_fixed_path(argc, argv);
+    }
+    else {
+        if (cmd_which(argc, argv, 3, argv[0]) != 0) {
+            printf("YuqiShell: command not found!\n");
+            return OTHER_ERROR;
+        }
+        exec_fixed_path(argc, argv);
+    }
+    return NORMAL;
 }
 
 /* get_absolute_path() function,
@@ -119,8 +135,9 @@ exec_fixed_path(int argc, char** argv)
         /* Setting sid, start a new session for background execution */
         if (bg_enabled)
             sid = setsid();
-        //debug information
-        //printf("debug: child process pid=%d running!\n", pid_exec);
+        /* deals with redirection */
+        rd_handler_on(pid_exec);
+
         execve(given_path, argv, env); 
         printf("YuqiShell: error: Can't execute %s\n", given_path);
         return OTHER_ERROR;

@@ -162,4 +162,8 @@ cmd_watchuser(int, char**);
  */
 void
 cmd_watchmail(int, char**);
+
+/* cmd_noclobber() function. */
+void
+cmd_noclobber(int, char**);
 #endif
