@@ -8,6 +8,8 @@ extern char **env;
 extern unsigned int alarm_time;
 extern int alarm_enabled;
 extern int sid;
+extern int left, right, pipe_enabled;
+extern int pipefd[2];
 pid_t pid_parent, pid_exec, pid_watchdog;
 
 /* check_outer_cmd() function
@@ -137,6 +139,10 @@ exec_fixed_path(int argc, char** argv)
             sid = setsid();
         /* deals with redirection */
         rd_handler_on(pid_exec);
+        /* deals with pipe */
+        if (pipe_enabled && left == 1) {
+
+        }
 
         execve(given_path, argv, env); 
         printf("YuqiShell: error: Can't execute %s\n", given_path);
@@ -176,6 +182,8 @@ exec_fixed_path(int argc, char** argv)
         option = WNOHANG;
         bg_add(pid_exec);
     }
+    else if (pipe_enabled && left == 1)
+        option = WNOHANG;
     else
         option = 0;
 

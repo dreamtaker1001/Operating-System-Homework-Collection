@@ -79,4 +79,7 @@ switch_out();
 void
 switch_in_on();
 
+/* find whether a pipe exists in a command */
+int
+find_pipe(char*);
 #endif

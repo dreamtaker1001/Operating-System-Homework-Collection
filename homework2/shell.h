@@ -62,6 +62,10 @@ parse_cmd();
 int
 find_cmd();
 
+/* find the command to execute -- finding IPC*/
+int
+find_cmd_head();
+
 /*the init function, initializes the basic environment of the shell*/
 void 
 shell_init();

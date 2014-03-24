@@ -14,6 +14,11 @@ struct history *hist_curr;
 extern char* p;
 int argc;
 char** argv;
+int pipe_enabled;
+int left;
+int right;
+int pipefd[2];
+int pipetype; /* 1: std; 2:err */
 
 /* The respond cycle of the shell, from prompt to the finish of execution
  * the return value indicates the status of the cycle.
@@ -21,32 +26,95 @@ char** argv;
 int
 respond_cycle()
 {
-  //debug information
-  //printf("Process %d, Went into another cycle!\n", getpid());
-  int cmd_count, return_value;
-  printf("%s [%s]> ", prompt, cwd);
-  signal(SIGINT, sigint_handler);
-  fgets(cmd_char, 255, stdin); 
-  //debug information
-  //printf("[YuqiShell] The last input cmd was %s\n", cmd_char);
+    int cmd_count, return_value;
+    pipe_enabled = 0;
+    left = right = 0;
+    printf("%s [%s]> ", prompt, cwd);
+    signal(SIGINT, sigint_handler);
+    fgets(cmd_char, 255, stdin); 
 
-  //debug information
-  //printf("[YuqiShell] the last command was %d\n", *cmd_char);
-  cmd_count = parse_cmd();
-  /* deal with background jobs */
-  bg_checkall();
-  if (cmd_count == CMD_EMPTY)
-      return CMD_EMPTY;
-  else if (cmd_count == EXIT_SHELL)
-      return EXIT_SHELL;
+    /* deals with IPC stuff */
+    int position = find_pipe(cmd_char);
+    if (position != -1) {
+        pipe_enabled = 1;
+        char *new1 = (char*)malloc(sizeof(char[255]));
+        char *new2 = (char*)malloc(sizeof(char[255]));
+        strncpy(new1, cmd_char, position);
+        //debug information
+        printf("New cmd 1 is : %s\n", new1);
+        if (cmd_char[position+1] == '&') {
+            strcpy(new2, cmd_char+position+2);
+            pipetype = 2;
+        }
+        else {
+            strcpy(new2, cmd_char+position+1);
+            pipetype = 1;
+        }
+        printf("New cmd 2 is : %s\n", new2);
+        /* Builds the pipe */
+        if (pipe(pipefd) == -1) {
+            printf("YuqiShell: pipe: error: %s\n", strerror(errno));
+            return OTHER_ERROR;
+        }
+        /* doing left side of pipe */
+        left = 1;
+        right = 0;
+        strcpy(cmd_char, new1);
+        printf("Starting to execute new1\n");
+        cmd_count = parse_cmd();
+        printf("ended parsing cmd for new1\n");
+        if (pipetype == 1) {
+            close(1); /* Closing stdout */
+            dup(pipefd[1]);  
+            close(pipefd[0]);
+        }
+        else if (pipetype == 2) {
+            close(2); /* Closing stderr */
+            dup(pipefd[1]);
+            close(1); /* Closing stdout */
+            dup(pipefd[1]);
+            close(pipefd[0]);
+        }
+        return_value = find_cmd();
+        close(pipefd[1]);
+        int fid = open("/dev/tty",O_WRONLY);
+        close(1);
+        dup(fid);
+        close(fid);
+        printf("done new1\n");
+        /* doing right side of pipe */
+        left = 0;
+        right = 1;
+        strcpy(cmd_char, new2);
+        printf("Starting to execute new2\n");
+        cmd_count = parse_cmd();
+        close(0); /* Closing stdin */
+        dup(pipefd[0]);
+        close(pipefd[1]);
+        if (pipe(pipefd) == -1) {
+            printf("YuqiShell: pipe: error: %s\n", strerror(errno));
+            return OTHER_ERROR;
+        }
+        return_value = find_cmd();
+    }
 
-  /* Find the command to execute */
-  return_value = find_cmd();
-  if (return_value == EXIT_SHELL)
-      return EXIT_SHELL;
-  else if (return_value == SYNTAX_ERROR)
-      return SYNTAX_ERROR;
+  /* No IPC needed to consider */
+  else {
+      cmd_count = parse_cmd();
+      /* deal with background jobs */
+      bg_checkall();
+      if (cmd_count == CMD_EMPTY)
+          return CMD_EMPTY;
+      else if (cmd_count == EXIT_SHELL)
+          return EXIT_SHELL;
 
+      /* Find the command to execute */
+      return_value = find_cmd();
+      if (return_value == EXIT_SHELL)
+          return EXIT_SHELL;
+      else if (return_value == SYNTAX_ERROR)
+          return SYNTAX_ERROR;
+  }
   return NORMAL;
 }
 
@@ -60,17 +128,9 @@ prepare_for_next_cycle()
 {
   history_add(cmd_char);
   int index;
-  //for (index = 0; index < argc; index++) {
-    //free(argv[index]);
-  //}
-  if (argv) {
-    //free(argv);
-    //printf("Successfully freed argv itself!\n");
-  }
   if (cmd_char) {
     cmd_char = (char*)realloc(cmd_char, sizeof(char[255]));
     memset(cmd_char, 0, 255);
-    //printf("Successfully reallocated cmd_char\n");
   }
   cmd_tmp = cmd_head;
   struct cmd *next_to_del;
@@ -80,7 +140,7 @@ prepare_for_next_cycle()
     //There is a weird problem here. Skipping this right now.
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       //free(cmd_tmp);
-    cmd_tmp = next_to_del;
+        cmd_tmp = next_to_del;
   }
   if (cmd_head)
     cmd_head = (struct cmd*)calloc(1, sizeof(struct cmd));
