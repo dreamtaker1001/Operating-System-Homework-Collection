@@ -3,6 +3,7 @@
 #include "util.h"
 
 int noclobber;
+int rd_enabled;
 char rd_target[127];
 int rd_type;
 pid_t rd_in_pid;

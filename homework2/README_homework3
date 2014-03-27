@@ -54,3 +54,108 @@ e. Routinely check the bg processes.
    option. If waitpid failure, then the process is
    no longer existed, I then remove the process from
    the array and print the good news to the user.
+
+f. position of related code:
+   bg.c  exec.c
+=============================================
+2. Implementation of watchuser (extra credit included)
+----------------------------------------
+a. ideas and implementation
+   I maintain two queues (which are linked lists), 
+one is the current logged in user queue (the "userlist" 
+in the program), the other is the "users in watch" 
+(the "watchlist" in the program).
+
+   For each cycle (my sleep time in daemon is 2 
+seconds), it updates the userlist after getting all 
+the logged in users in the system. Then it compares 
+the value of the two queues. I perform the comparison 
+in two steps:
+
+   step 1: scan for new login. For all the users in 
+"userlist", I scan whether they already exist in 
+"watchlist". If not, then the user must be just logged 
+in.
+
+   step 2: scan for new exit. For all the users in 
+watchlist, I scan whether they exist in userlist. 
+If not, then the user must be just logged out.
+
+   After that, I update the related information in my 
+watchlist, and wait till next cycle.
+
+   All the operations on watchlist is in critical area, 
+therefore a lock has to be required before performing 
+them, and then released after the operation. I used 
+pthread mutex locks.
+
+b. position of related code:
+   watch.c
+
+==============================================
+3. Implementation of watchmail.
+---------------------------------
+This one assembles the watchuser command, and somewhat
+easier.
+
+The point that is different from watchuser is, I need to
+invoke "stat" calls to get the size of some file. After
+I get the filesize, I compared it with the one that is 
+recorded in my "maillist" queue.
+
+This doesn't need locks anymore, since a mail daemon will
+not touch the record that doesn't in its supervising.
+
+position of related code:
+    mail.c
+
+==============================================
+4. Implementation of IPC
+---------------------------------
+a. outline
+
+The task of IPC is about building pipes and preventing
+zombie processes from occurring.
+
+b. building pipes
+
+The pipe is an array of two file descriptors: pipefd[0] 
+and pipefd[1], representing the "out" side of the pipe 
+and "in" side of the pipe, respectively.
+
+ All I need to do is close the stdout file (also stderr 
+file when |& is used) of the producing process and 
+substitute it (them) with pipefd[1]; Close the stdin file
+of the consuming process and substitute it with pipefd[0].
+
+I also need to close the pipefd[1] when the producing
+process finished its work. If I don't, a deadlock will 
+occur.
+
+c. zombie preventing.
+
+In order to prevent zombie, I need to wait for both process
+on the left and the right of the pipe. If I don't wait them,
+they will become zombie processes. Also, if I don't wait the
+left process, I cannot get the right chance to close 
+pipefd[1], which is important for preventing deadlocks. 
+Pipefd[1] should be closed right after the left process
+terminates.
+
+d. process separation.
+
+A command with a pipe consists of two subcommands. I need to
+separate those to perform a two-step execution. In this way
+I changed the originally written shell's function, in cycle.c.
+I need to clean the execution environment to prevent context
+contents from interfere with each other.
+
+e. position of related code:
+   cycle.c  ipc.c  exec.c
+
+==================================
+5. Problems.
+------------------------
+In warnload, I cannot get the system load with the given
+example code (I passed the HAVE_KSTAT flag to the compiler).
+

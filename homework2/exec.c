@@ -10,7 +10,11 @@ extern int alarm_enabled;
 extern int sid;
 extern int left, right, pipe_enabled;
 extern int pipefd[2];
+extern int pipetype;
+extern int rd_enabled;
+extern int rightpid, leftpid;
 pid_t pid_parent, pid_exec, pid_watchdog;
+
 
 /* check_outer_cmd() function
  * checks whether command is an outer-source command
@@ -18,9 +22,12 @@ pid_t pid_parent, pid_exec, pid_watchdog;
 int
 check_outer_cmd(int argc, char** argv)
 {
+    rd_enabled = 0;
     /* deals with redirect stuff first */
     int rd_position = check_rd(argc, argv);
+    /* if rd_position > 0, then rd exists */
     if (rd_position > 0) {
+        rd_enabled = 1;
         argc = rd_position;
         char** argvnew = (char**)malloc((argc+1)*sizeof(char**));
         int i;
@@ -28,6 +35,7 @@ check_outer_cmd(int argc, char** argv)
             argvnew[i] = (char*)calloc(1, sizeof(char[128]));
             strcpy(argvnew[i], argv[i]);
         }
+        argvnew[argc] = NULL;
         argv = argvnew;
     }
     else if (rd_position < 0) {
@@ -37,7 +45,7 @@ check_outer_cmd(int argc, char** argv)
     if (strncmp(argv[0], "/", 1) == 0 ||
             strncmp(argv[0], "./", 2) == 0 ||
             strncmp(argv[0], "../", 3) == 0) {
-        argv[0] = get_absolute_path(argv[0]);
+        strcpy(argv[0], get_absolute_path(argv[0]));
         exec_fixed_path(argc, argv);
     }
     else {
@@ -77,10 +85,8 @@ char
       i--;
     strncpy(first_half, second_half, i);
     strcpy(second_half, given_path+3);
-    //debug information
-    //printf("debug: parent dir is %s\n", first_half);
   }
-  /* written for watchmail */
+  /* written for watchmail and redirection */
   else if (given_path[0] != '/') {
         getcwd(first_half, 128);
         strcpy(second_half, given_path);
@@ -124,7 +130,6 @@ exec_fixed_path(int argc, char** argv)
         printf("YuqiShell: error: %s is a directory instead of a file!\n", given_path);
         return SYNTAX_ERROR;
     }
-
     /* ready to execute, creating a new process for execution */
     if ((pid=fork()) < 0) {
         printf("YuqiShell: Cannot create new process!\n");
@@ -138,18 +143,30 @@ exec_fixed_path(int argc, char** argv)
         if (bg_enabled)
             sid = setsid();
         /* deals with redirection */
-        rd_handler_on(pid_exec);
+        if (rd_enabled == 1)
+            rd_handler_on(pid_exec);
         /* deals with pipe */
-        if (pipe_enabled && left == 1) {
-
+        if (pipe_enabled) {
+            pipe_adjust_fd();
         }
-
         execve(given_path, argv, env); 
-        printf("YuqiShell: error: Can't execute %s\n", given_path);
-        return OTHER_ERROR;
+        printf("YuqiShell: error: Can't execute %s, %s\n", given_path, strerror(errno));
+        exit(1);
+    }
+    /* The father shell got the executing process's pid*/
+    pid_exec = pid; 
+    /* wait functions for pipe */
+    if (pipe_enabled) {
+        if (right == 1) {
+            rightpid = pid_exec;
+        }
+        else if (left == 1) {
+            leftpid = pid_exec;
+        }
+        wait_pipe_pid();
+        return NORMAL;
     }
 
-    pid_exec = pid; /* The father shell got the executing process's pid*/
     if (alarm_enabled == 1) {
         /* Creating watchdog process */
         if ((pid=fork()) < 0) {
@@ -160,15 +177,16 @@ exec_fixed_path(int argc, char** argv)
         /* inside the watchdog process */
         else if (pid == 0) {
             pid_watchdog = getpid();
-            //debug information
-            //printf("debug: watchdog process pid=%d running!\n", pid_watchdog);
-
             sleep(alarm_time);
             if (kill(pid_exec, 0) != -1) {
                 kill(pid_exec, SIGKILL);
                 printf("YuqiShell: Taking too long to execute this command, terminated!\n");
             }
             exit(0);
+        }
+        if ((pid_exec=waitpid(pid_watchdog, &status, WNOHANG)) < 0) {
+            printf("YuqiShell: error: waitpid (watchdog) error!\n");
+            return OTHER_ERROR;
         }
     }
     /* ready to wait for the process, but has to specify the
@@ -182,8 +200,6 @@ exec_fixed_path(int argc, char** argv)
         option = WNOHANG;
         bg_add(pid_exec);
     }
-    else if (pipe_enabled && left == 1)
-        option = WNOHANG;
     else
         option = 0;
 
@@ -192,10 +208,10 @@ exec_fixed_path(int argc, char** argv)
      * father process can continue execution.
      */
     if ((pid_exec=waitpid(pid_exec, &status, option)) < 0) {
-      printf("YuqiShell: error: waitpid error!\n");
+      printf("YuqiShell: error: in exec: waitpid error!\n");
       return OTHER_ERROR;
-      printf("YuqiShell: returned value %d\n", status);
     }
+     // printf("YuqiShell: returned value %d\n", status);
     
     return NORMAL;
 }

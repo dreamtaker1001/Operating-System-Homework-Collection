@@ -1,7 +1,7 @@
 CC=gcc
 FLAGS=-g
 #allflag=-g -lpthread -lkstat -DHAVE_KSTAT
-allflag=-g -lpthread -DHAVE_KSTAT 
+allflag=-g -lpthread -lmcheck -DHAVE_KSTAT 
 
 all: shell.o cycle.o dir.o self.o env.o which.o signal.o exec.o bg.o warnload.o watch.o mail.o rd.o ipc.o
 	$(CC) $(allflag) shell.o cycle.o dir.o self.o env.o which.o signal.o exec.o bg.o warnload.o watch.o mail.o rd.o ipc.o -o yuqish

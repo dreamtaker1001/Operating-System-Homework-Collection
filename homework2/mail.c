@@ -55,7 +55,7 @@ watchmail_add(char* to_add)
     struct stat st;
     stat(filename, &st);
     tmp->st_size = st.st_size;
-    tmp->tid = pthread_create(&(tmp->tid), NULL, mail_daemon, tmp);
+    pthread_create(&(tmp->tid), NULL, mail_daemon, tmp);
 }
 
 /* remove a watchmail option */
@@ -79,6 +79,8 @@ watchmail_remove(char* to_remove)
         }
         tmp2->next = tmp->next;
     }
+    //debug information
+    printf("the tid to cancel is : %d\n", tmp->tid);
     while (pthread_cancel(tmp->tid) != 0) {
         printf("YuqiShell: watchmail: error: %s\n", strerror(errno));
     }

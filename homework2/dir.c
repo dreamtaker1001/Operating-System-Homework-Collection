@@ -1,6 +1,7 @@
 #include <glob.h>
 #include "shell.h"
 #include "cmd.h"
+#include "util.h"
 
 extern struct pathelement *path_tmp;
 extern struct pathelement *path_list;
@@ -8,6 +9,7 @@ extern char *cwd;
 extern char *prompt;
 extern char **env;
 extern char **env_tmp;
+extern int pipe_enabled;
 char *last_dir;
 
 /* cmd_cd() function,

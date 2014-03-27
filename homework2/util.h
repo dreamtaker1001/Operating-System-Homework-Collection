@@ -16,7 +16,7 @@ int
 bg_add(pid_t);
 
 /* remove a background job (will go to foreground)*/
-int
+pid_t
 bg_remove(int);
 
 /* show all background jobs */
@@ -82,4 +82,16 @@ switch_in_on();
 /* find whether a pipe exists in a command */
 int
 find_pipe(char*);
+
+/* deals with pipes, adjusting the file descriptors */
+void
+pipe_adjust_fd();
+
+/* wait for the pipe processes before continue, in cycle.c */
+void
+wait_pipe_pid();
+
+/* cleans up the left process */
+void
+clean_up_child_process(int);
 #endif

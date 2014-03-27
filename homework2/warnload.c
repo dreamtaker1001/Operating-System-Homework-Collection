@@ -22,7 +22,7 @@ cmd_warnload(int argc, char** argv)
     }
     load_thold = atof(argv[1]);
     if (tid == 0)
-        tid = pthread_create(&tid, NULL, checkload, NULL);
+        pthread_create(&tid, NULL, checkload, NULL);
     return;
 }
 

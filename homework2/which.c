@@ -23,52 +23,46 @@ char *last_dir;
 int 
 cmd_which(int argc, char **argv, int mode, char* return_value)
 {
-  int reason = 0, fd, flag = 0;
-  char* final_path = (char*)calloc(1, sizeof(char[255]));
-  char* filename;
-  if (mode != 3)
-    filename = argv[1];
-  else
-    filename = argv[0];
-  //debug information
-  //printf("[YuqiShell] searching %s in PATH... \n", argv[1]);
-  path_tmp = path_list;
-  while(path_tmp != NULL) {
-    free(final_path);
-    final_path = (char*)calloc(1, sizeof(char[255]));
-    final_path = strcat(final_path, path_tmp->element);
-    final_path = strcat(final_path, "/");
-    if ((fd = open(final_path, O_RDONLY, 0)) == -1) {
-        reason = access(final_path, X_OK);
-        if (errno == EACCES && mode != 3) 
-            printf("YuqiShell: which: %s: permission denied!\n", final_path);
-    }
-    else close(fd);
-    if (mode != 3)
-      final_path = strcat (final_path, argv[1]);
-    else
-      final_path = strcat (final_path, argv[0]);
-    //debug information
-    //printf("[YuqiShell] Searching path %s for %s!\n", final_path, argv[1]);
-    if ((fd = open(final_path, O_RDONLY, 0)) != -1) {
-        if (mode < 3)
-          printf("%s\n", final_path);
-        else if (mode == 3 && return_value != NULL) {
-          strcpy(return_value, final_path);
+    int reason = 0, fd, flag = 0;
+    char* final_path = (char*)calloc(1, sizeof(char[255]));
+
+    path_tmp = path_list;
+    while(path_tmp != NULL) {
+        final_path = (char*)realloc(final_path, sizeof(char[255]));
+        memset(final_path, 0, 255);
+        final_path = strcat(final_path, path_tmp->element);
+        final_path = strcat(final_path, "/");
+        if ((fd = open(final_path, O_RDONLY, 0)) == -1) {
+            reason = access(final_path, X_OK);
+            if (errno == EACCES && mode != 3) 
+                printf("YuqiShell: which: %s: permission denied!\n", final_path);
         }
-        flag++;
-        close(fd);
-        if (mode == 1 || mode == 3)
-            return NORMAL;
+        else close(fd);
+        /* for the purpose of searching out-source commands,
+         *  mode value is 3. */
+        if (mode != 3)
+            final_path = strcat (final_path, argv[1]);
+        else
+            final_path = strcat (final_path, argv[0]);
+        if ((fd = open(final_path, O_RDONLY, 0)) != -1) {
+            if (mode < 3)
+                printf("%s\n", final_path);
+            else if (mode == 3 && return_value != NULL) {
+                strcpy(return_value, final_path);
+            }
+            flag++;
+            close(fd);
+            if (mode == 1 || mode == 3)
+                return NORMAL;
+        }
+        path_tmp = path_tmp -> next;
     }
-    path_tmp = path_tmp -> next;
-  }
-  if (mode == 1) 
-      printf("YuqiShell: which: no %s in PATH!\n", argv[1]);
-  if (mode == 2 && flag == 0)
-      printf("YuqiShell: where: no %s in PATH!\n", argv[1]);
-  if (mode == 2 && flag != 0)
-      return NORMAL;
-  return OTHER_ERROR;
+    if (mode == 1) 
+        printf("YuqiShell: which: no %s in PATH!\n", argv[1]);
+    if (mode == 2 && flag == 0)
+        printf("YuqiShell: where: no %s in PATH!\n", argv[1]);
+    if (mode == 2 && flag != 0)
+        return NORMAL;
+    return OTHER_ERROR;
 }
 

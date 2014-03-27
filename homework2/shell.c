@@ -21,15 +21,19 @@ struct pathelement *path_tmp = NULL;
 void
 shell_init(void)
 {
-  prompt = (char*) malloc(sizeof(char[16]));
+  prompt = (char*)malloc(sizeof(char[16]));
   cwd = (char*) malloc(sizeof(char[255]));
-  last_dir = (char*) malloc(sizeof(char[255])); 
+  last_dir = (char*)malloc(sizeof(char[255])); 
   strcpy(last_dir, "");
-  cmd_char = (char*) calloc(1, sizeof(char[255]));
+
+  cmd_char = (char*)calloc(1, sizeof(char[255]));
   cmd_head = (struct cmd*) malloc(sizeof(struct cmd));
-  p = (char*) malloc(sizeof(char[128]));
+  cmd_head->element = NULL;
+  cmd_head->next = NULL;
+
+  p = (char*)malloc(sizeof(char[128]));
   printf("*** Welcome to Yuqi's Shell ! ***\n");
-  path_list = (struct pathelement*) malloc (sizeof(struct pathelement));
+  path_list = (struct pathelement*)malloc (sizeof(struct pathelement));
   path_list -> next = NULL;
   path_list -> element = NULL;
   if (getcwd(cwd, 255) == NULL) {
@@ -39,7 +43,7 @@ shell_init(void)
    * to prevent myself from forgetting it 
    * as well as my hands are cut as a consequence...
    */
-  strcpy(prompt, "liuyuqi");
+  strcpy(prompt, "user");
   bg_init();
 
   path_list = get_path();
@@ -132,29 +136,30 @@ before_exit(int status)
 }
 
 /* The main function of this shell
- */
+*/
 int
 main(int argc, char** argv, char** envp)
 {
-  sigignore(SIGTSTP);
-  sigignore(SIGTERM);
-  if (argc > 2) {
-    printf("YuqiShell: too many arguments!\n");
-    return -1;
-  } else if (argc == 2) {
-    alarm_time = atoi(argv[1]);
-    alarm_enabled = 1;
-  }
-  shell_init();
-  int status = 0;
-  env = envp;
-  while (1) {
-    status = respond_cycle();
-    if (status == EXIT_SHELL)
-      break;
-    prepare_for_next_cycle();
-  }
-  before_exit(status);
-  fflush(stdout);
-  return 0;
+    sigignore(SIGTSTP);
+    sigignore(SIGTERM);
+    if (argc > 2) {
+        printf("YuqiShell: too many arguments!\n");
+        return -1;
+    } else if (argc == 2) {
+        alarm_time = atoi(argv[1]);
+        alarm_enabled = 1;
+    }
+    shell_init();
+    int status = 0;
+    env = envp;
+    while (1) {
+        status = respond_cycle();
+        if (status == EXIT_SHELL)
+            break;
+        prepare_for_next_cycle();
+        history_add(cmd_char);
+    }
+    //before_exit(status);
+    fflush(stdout);
+    return 0;
 }

@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <signal.h>
 #define CMD_EMPTY -1
 #define NORMAL 0
