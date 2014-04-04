@@ -1,11 +1,14 @@
 CC=gcc
 FLAGS=-g
 
-all: init.o
-	$(CC) $(FLAGS) init.o -o queue
+all: list.o main.o
+	$(CC) $(FLAGS) list.o main.o -o list
 
-init: queue.h init.c
-	$(CC) $(FLAGS) -c init.c -o init.o
+init: list.h list.c
+	$(CC) $(FLAGS) -c list.c -o list.o
+
+main: list.h main.c
+	$(CC) $(FLAGS) -c main.c -o main.o
 
 clean:
-	rm -f *.o queue
+	rm -f *.o list
