@@ -22,7 +22,8 @@ int main(void)
         e = &t->elem;
         list_insert_head(&testlist, e);
     }
-
+	if (is_list_empty(&testlist))
+		printf("Error: Testlist is still EMPTY!!!\n");
     /* iteration test */
     for (e = list_begin(&testlist); e != list_end(&testlist); \
             e = list_next(e))

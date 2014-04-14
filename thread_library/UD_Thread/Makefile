@@ -1,9 +1,9 @@
 # Makefile for UD CISC user-level thread library
 
 CC = gcc
-CFLAGS = -g
+CFLAGS = -g -lmcheck
 
-LIBOBJS = t_lib.o 
+LIBOBJS = t_lib.o list.o
 
 TSTOBJS = test00.o 
 
@@ -13,7 +13,7 @@ EXECS = test00
 
 # specify the source files
 
-LIBSRCS = t_lib.c
+LIBSRCS = t_lib.c list.c
 
 TSTSRCS = test00.c
 
@@ -27,6 +27,9 @@ t_lib.a: ${LIBOBJS} Makefile
 
 t_lib.o: t_lib.c t_lib.h Makefile
 	${CC} ${CFLAGS} -c t_lib.c
+
+list.o:	list.h list.c Makefile
+	${CC} ${CFLAGS} -c list.c
 
 test00.o: test00.c ud_thread.h Makefile
 	${CC} ${CFLAGS} -c test00.c

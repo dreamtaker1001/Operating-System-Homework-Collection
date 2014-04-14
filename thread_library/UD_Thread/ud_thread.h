@@ -9,3 +9,6 @@ t_yield(void);
 
 void 
 t_init(void);
+
+void
+t_terminate(void);
