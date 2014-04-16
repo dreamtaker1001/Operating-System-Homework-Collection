@@ -1,0 +1,30 @@
+README_Phase1
+    by Yuqi Liu.
+
+++++++++++++++++++++++
+Running guide:
+
+type "make test" to run automatically comparison code.
+
+OR
+
+type "make" to build the thread library only.
+type "make test01" to build test01
+type "make test01x" to build test01x
+run ./test01 or ./test01x to run the test separately.
+
+===============================
+Documentation
+===============================
+For my convenience, I implemented a generic doubly linked
+list in C and used it in my program. This saves a lot of 
+time and provides some error checking functionalities that
+may make my program more robust.
+
+The generic linked list was implemented in files 
+   list.h
+   list.c
+
+In order to prevent any new tcb get polluted by any dirty
+chunks of memory, I used calloc(3) function for every
+memory allocation. 
