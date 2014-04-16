@@ -66,21 +66,21 @@ is_list_empty(struct list *list)
             && list_end(list) == list_head(list));
 }
 
-static inline bool
+inline bool
 is_head(struct list_elem *e)
 {
     assert (e);
     return (e->prev == NULL && e->next != NULL);
 }
 
-static inline bool
+inline bool
 is_interior(struct list_elem *e)
 {
     assert (e);
     return (e->prev != NULL && e->next != NULL);
 }
 
-static inline bool
+inline bool
 is_tail(struct list_elem *e)
 {
     assert (e);

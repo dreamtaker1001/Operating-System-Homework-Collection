@@ -7,7 +7,11 @@
 #include <sys/mman.h>
 #include "list.h"
 
-struct thread_t {
+struct tcb {
+    int thread_id;
+    int priority;
+    ucontext_t context;
     struct list_elem elem;
-    ucontext_t *context;
 };
+
+typedef struct tcb tcb;

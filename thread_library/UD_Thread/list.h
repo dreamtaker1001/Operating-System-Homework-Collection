@@ -62,13 +62,13 @@ struct list_elem
 
 /* functions on determining node position
  * (used in assertions of iteration) */
-static inline bool
+inline bool
 is_head(struct list_elem*);
 
-static inline bool
+inline bool
 is_interior(struct list_elem*);
 
-static inline bool
+inline bool
 is_tail(struct list_elem*);
 
 bool

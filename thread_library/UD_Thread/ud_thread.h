@@ -12,3 +12,6 @@ t_init(void);
 
 void
 t_terminate(void);
+
+void
+t_shutdown(void);
