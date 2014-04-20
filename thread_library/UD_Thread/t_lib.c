@@ -2,7 +2,8 @@
 #include <assert.h>
 
 struct list q_running;
-struct list q_ready;
+struct list q_ready_H;
+struct list q_ready_L;
 
 void t_yield()
 {
@@ -13,16 +14,37 @@ void t_yield()
     /* Move the running thread to tail of ready queue */
     tcb *tmpthread = (tcb*)calloc(1, sizeof(tcb));
     getcontext(&tmpthread->context);
-    list_insert_tail(&q_ready, &tmpthread->elem);
+    tcb *running = list_entry(list_begin(&q_running), tcb, elem);
+    tmpthread->thread_id = running->thread_id;
+    tmpthread->priority = running->priority;
+    int queueflag = -1;
+
+    if (tmpthread->priority == 0) {
+        list_insert_tail(&q_ready_H, &tmpthread->elem);
+        queueflag = 0;
+        curr = &list_entry(list_end(&q_ready_H), tcb, elem)->context;
+    }
+    else if (tmpthread->priority == 1) {
+        list_insert_tail(&q_ready_L, &tmpthread->elem);
+        queueflag = 1;
+        curr = &list_entry(list_end(&q_ready_L), tcb, elem)->context;
+    }
+    assert(queueflag != -1);
     list_remove(list_begin(&q_running));
-    curr = &list_entry(list_end(&q_ready), tcb, elem)->context;
     /* Move the 1st thread of the ready queue into running */
-    next = &list_entry(list_begin(&q_ready), tcb, elem)->context;
+    if (queueflag == 0)
+        next = &list_entry(list_begin(&q_ready_H), tcb, elem)->context;
+    else if (queueflag == 1)
+        next = &list_entry(list_begin(&q_ready_L), tcb, elem)->context;
+
     tcb *tmpthread1 = (tcb*)calloc(1, sizeof(tcb));
     tmpthread1->context = *next;
     list_insert_head(&q_running, &tmpthread1->elem);
     next = &list_entry(list_begin(&q_running), tcb, elem)->context;
-    list_remove(list_begin(&q_ready));
+    if (queueflag == 0)
+        list_remove(list_begin(&q_ready_H));
+    else if (queueflag == 1)
+        list_remove(list_begin(&q_ready_L));
 
     swapcontext(curr, next);
 }
@@ -30,13 +52,15 @@ void t_yield()
 void t_init()
 {
     list_init(&q_running);
-    list_init(&q_ready);
-    assert(is_list_empty(&q_running));
-    assert(is_list_empty(&q_ready));
+    list_init(&q_ready_H);
+    list_init(&q_ready_L);
 
     tcb *tmpthread;
     tmpthread = (tcb*)calloc(1, sizeof(tcb));
+    /* initializing the main thread */
     getcontext(&tmpthread->context);
+    tmpthread->priority = 1;
+    tmpthread->thread_id = -1;
     list_insert_head(&q_running, &tmpthread->elem);
 }
 
@@ -44,7 +68,15 @@ void
 t_terminate()
 {
     ucontext_t *next;
-    next = &list_entry(list_begin(&q_ready), tcb, elem)->context;
+    int queueflag = 0;
+    if (!is_list_empty(&q_ready_H)) {
+        queueflag = 0;
+        next = &list_entry(list_begin(&q_ready_H), tcb, elem)->context;
+    }
+    else if (!is_list_empty(&q_ready_L)) {
+        queueflag = 1;
+        next = &list_entry(list_begin(&q_ready_L), tcb, elem)->context;
+    }
     struct list_elem *e = list_begin(&q_running);
     list_remove(e);
     free(list_entry(e, tcb, elem));
@@ -53,9 +85,17 @@ t_terminate()
      * insert(tmpthread->elem)? why can't I just do
      * insert(list_begin(&q_ready))  ????
      */
-    *tmpthread = *list_entry(list_begin(&q_ready), tcb, elem);
+    if (queueflag == 0)
+        *tmpthread = *list_entry(list_begin(&q_ready_H), tcb, elem);
+    else
+        *tmpthread = *list_entry(list_begin(&q_ready_L), tcb, elem);
+        
     list_insert_head(&q_running, &tmpthread->elem);
-    list_remove(list_begin(&q_ready));
+    if (queueflag == 0)
+        list_remove(list_begin(&q_ready_H));
+    else
+        list_remove(list_begin(&q_ready_L));
+
     setcontext(next);
 }
 
@@ -64,15 +104,21 @@ t_shutdown()
 {
     struct list_elem *e;
     tcb *tmp;
-    e = list_begin(&q_ready);
-    while(!is_list_empty(&q_ready)) {
-        tmp = list_entry(list_begin(&q_ready), tcb, elem);
+    while(!is_list_empty(&q_ready_H)) {
+        tmp = list_entry(list_begin(&q_ready_H), tcb, elem);
+        e = list_begin(&q_ready_H);
         list_remove(e);
         free(tmp);
     }
-    e = list_begin(&q_running);
+    while(!is_list_empty(&q_ready_L)) {
+        tmp = list_entry(list_begin(&q_ready_L), tcb, elem);
+        e = list_begin(&q_ready_L);
+        list_remove(e);
+        free(tmp);
+    }
     while(!is_list_empty(&q_running)) {
         tmp = list_entry(list_begin(&q_running), tcb, elem);
+        e = list_begin(&q_running);
         list_remove(e);
         free(tmp);
     }
@@ -96,6 +142,8 @@ int t_create(void (*fct)(int), int id, int pri)
     tmpthread->context = *uc;
     tmpthread->thread_id = id;
     tmpthread->priority = pri;
-    list_insert_tail(&q_ready, &tmpthread->elem);
-    assert(!is_list_empty(&q_ready));
+    if (pri == 0)
+        list_insert_tail(&q_ready_H, &tmpthread->elem);
+    else if (pri == 1)
+        list_insert_tail(&q_ready_L, &tmpthread->elem);
 }
