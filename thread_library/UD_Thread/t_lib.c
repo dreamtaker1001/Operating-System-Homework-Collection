@@ -9,6 +9,7 @@ void t_yield()
 {
     ucontext_t *curr;
     ucontext_t *next;
+    tcb *tcbnext;
     assert(!is_list_empty(&q_running));
 
     /* Move the running thread to tail of ready queue */
@@ -20,25 +21,31 @@ void t_yield()
     int queueflag = -1;
 
     if (tmpthread->priority == 0) {
+        assert(running->priority == 0);
         list_insert_tail(&q_ready_H, &tmpthread->elem);
-        queueflag = 0;
         curr = &list_entry(list_end(&q_ready_H), tcb, elem)->context;
     }
     else if (tmpthread->priority == 1) {
         list_insert_tail(&q_ready_L, &tmpthread->elem);
-        queueflag = 1;
         curr = &list_entry(list_end(&q_ready_L), tcb, elem)->context;
     }
-    assert(queueflag != -1);
     list_remove(list_begin(&q_running));
     /* Move the 1st thread of the ready queue into running */
-    if (queueflag == 0)
-        next = &list_entry(list_begin(&q_ready_H), tcb, elem)->context;
-    else if (queueflag == 1)
-        next = &list_entry(list_begin(&q_ready_L), tcb, elem)->context;
+    if (!is_list_empty(&q_ready_H)) {
+        tcbnext = list_entry(list_begin(&q_ready_H), tcb, elem);
+        queueflag = 0;
+    }
+    else if (!is_list_empty(&q_ready_L)) {
+        tcbnext = list_entry(list_begin(&q_ready_L), tcb, elem);
+        queueflag = 1;
+    }
+    assert(queueflag != -1);
 
     tcb *tmpthread1 = (tcb*)calloc(1, sizeof(tcb));
-    tmpthread1->context = *next;
+    tmpthread1->context = tcbnext->context;
+    tmpthread1->thread_id = tcbnext->thread_id;
+    tmpthread1->priority = tcbnext->priority;
+    
     list_insert_head(&q_running, &tmpthread1->elem);
     next = &list_entry(list_begin(&q_running), tcb, elem)->context;
     if (queueflag == 0)
@@ -142,8 +149,9 @@ int t_create(void (*fct)(int), int id, int pri)
     tmpthread->context = *uc;
     tmpthread->thread_id = id;
     tmpthread->priority = pri;
-    if (pri == 0)
+    if (pri == 0) {
         list_insert_tail(&q_ready_H, &tmpthread->elem);
+    }
     else if (pri == 1)
         list_insert_tail(&q_ready_L, &tmpthread->elem);
 }
