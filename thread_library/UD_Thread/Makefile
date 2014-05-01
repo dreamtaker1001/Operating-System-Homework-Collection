@@ -1,7 +1,8 @@
 # Makefile for UD CISC user-level thread library
 
 CC = gcc
-CFLAGS = -g -lmcheck
+CFLAGS = -g -O0
+#CFLAGS = -g -lmcheck -O0
 
 LIBOBJS = t_lib.o list.o
 
