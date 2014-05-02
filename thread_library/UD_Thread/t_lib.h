@@ -20,8 +20,21 @@ struct tcb {
     int thread_magic;
     struct list_elem elem;
 };
-
 typedef struct tcb tcb;
+
+struct thr {
+    tcb *p;
+    struct list_elem elem;
+};
+
+typedef struct thr thread_p;
+
+struct semaphore {
+    unsigned int value;
+    struct list waiters;     
+};
+
+typedef struct semaphore sem;
 
 void
 sighand(int);

@@ -5,8 +5,9 @@
 #include <errno.h>
 #include <sys/types.h>
 
-#define TIME 1 
+#define TIME 50 
 
+struct list alllist;
 struct list q_running;
 struct list q_ready_H;
 struct list q_ready_L;
@@ -14,7 +15,7 @@ struct list q_ready_L;
 void 
 sighand(int sig)
 {
-    printf("SIGALRM caught\n");
+//    printf("SIGALRM caught\n");
     t_yield();
 }
 
@@ -22,89 +23,77 @@ void
 t_yield(void)
 {
     ualarm(0, 0);
-    ucontext_t *curr;
-    ucontext_t *next;
-    tcb *running, *tcbnext;
+    ucontext_t *curr = NULL, *next = NULL;
+    tcb *running = NULL, *tcbnext = NULL;
+    struct list_elem *e = NULL;
     assert(!is_list_empty(&q_running));
 
+    sighold(SIGALRM);
+    running = list_entry(list_begin(&q_running), thread_p, elem)->p;
     if (is_list_empty(&q_ready_H) && is_list_empty(&q_ready_L)) {
         printf("Q_ready_H and L are both empty!\n");
         ualarm(TIME, 0);
         return;
     }
-    sighold(SIGALRM);
-
-    /* Move the running thread to tail of ready queue */
-    running = list_entry(list_begin(&q_running), tcb, elem);
     if (is_list_empty(&q_ready_H) && running->priority == 0) {
         printf("Q_ready_H is empty and trying to insert H thread, not doing this!\n");
         ualarm(TIME, 0);
         return;
     }
-    tcb *tmpthread = (tcb*)calloc(1, sizeof(tcb));
-    assert(tmpthread);
-    getcontext(&tmpthread->context);
-    tmpthread->context = running->context;
-    assert(running->context.uc_stack.ss_sp); 
-    tmpthread->thread_id = running->thread_id;
-    tmpthread->priority = running->priority;
-    tmpthread->thread_magic = running->thread_magic;
-
+    /*
+    for (e = list_begin(&alllist); e != list_tail(&alllist); 
+            e = list_next(e)) {
+        assert(is_thread(e));
+    }
+    */
+    /* Move the running thread to tail of ready queue */
     int queueflag = -1;
+    thread_p *tmp_p = (thread_p *)calloc(1, sizeof(thread_p));
+    tmp_p->p = running;
 
-    assert (tmpthread->priority == 0 || tmpthread->priority == 1);
-    if (tmpthread->priority == 0) {
-        list_insert_tail(&q_ready_H, &tmpthread->elem);
-        curr = &(list_entry(list_end(&q_ready_H), tcb, elem)->context);
-    }
-    else if (tmpthread->priority == 1) {
-        list_insert_tail(&q_ready_L, &tmpthread->elem);
-        curr = &(list_entry(list_end(&q_ready_L), tcb, elem)->context);
-    }
-    struct list_elem *e = list_begin(&q_running);
-    assert(is_thread(e));
-    tcb *to_free = list_entry(e, tcb, elem);
+    if (running->priority == 0) 
+        list_insert_tail(&q_ready_H, &tmp_p->elem);
+    else if (running->priority == 1) 
+        list_insert_tail(&q_ready_L, &tmp_p->elem);
+    curr = &running->context;
+    e = list_begin(&q_running);
+    tmp_p = list_entry(e, thread_p, elem);
     list_remove(e);
-    free(to_free);
+    free(tmp_p);
 
     /* Move the 1st thread of the ready queue into running */
     if (!is_list_empty(&q_ready_H)) {
-        tcbnext = list_entry(list_begin(&q_ready_H), tcb, elem);
+        tcbnext = list_entry(list_begin(&q_ready_H), thread_p, elem)->p;
         queueflag = 0;
     }
     else if (!is_list_empty(&q_ready_L)) {
-        tcbnext = list_entry(list_begin(&q_ready_L), tcb, elem);
+        tcbnext = list_entry(list_begin(&q_ready_L), thread_p, elem)->p;
         queueflag = 1;
     }
-    tcb *tmpthread1 = (tcb*)calloc(1, sizeof(tcb));
-    assert(tmpthread1);
-    tmpthread1->context = tcbnext->context;
-    assert(tmpthread1->context.uc_stack.ss_sp);  
-    tmpthread1->thread_id = tcbnext->thread_id;
-    tmpthread1->priority = tcbnext->priority;
-    tmpthread1->thread_magic = tcbnext->thread_magic;
-    list_insert_head(&q_running, &tmpthread1->elem);
-    next = &(list_entry(list_begin(&q_running), tcb, elem)->context);
+    tmp_p = (thread_p *)calloc(1, sizeof(thread_p));
+    tmp_p->p = tcbnext;
+    list_insert_head(&q_running, &tmp_p->elem);
+    next = &tcbnext->context;
 
-    assert(queueflag == 0 || queueflag == 1);
-    struct list_elem *f = NULL;
     if (queueflag == 0) 
-        f = list_begin(&q_ready_H);
+        e = list_begin(&q_ready_H);
     else if (queueflag == 1) 
-        f = list_begin(&q_ready_L);
-    assert(f && is_thread(f));
-    tcb *to_free2 = list_entry(f, tcb, elem);
-    list_remove(f);
-    free(to_free2);
-    sigrelse(SIGALRM);
+        e = list_begin(&q_ready_L);
+    tmp_p = list_entry(e, thread_p, elem);
+    list_remove(e);
+    free(tmp_p);
     printf("Ready to swapcontext...\n");
+    sigrelse(SIGALRM);
+    printf("After sigrelse...\n");
     
+    ualarm(TIME, 0);
+    printf("after ualarm is set...\n");
     assert(curr);
     assert(next);
-    ualarm(TIME, 0);
     if (swapcontext(curr, next) == -1) {
         printf("Swapcontext error: %s\n", strerror(errno));   
     }
+    printf("after swapcontext\n");
 }
 
 int
@@ -119,10 +108,12 @@ is_thread(struct list_elem *e)
 void 
 t_init()
 {
+    list_init(&alllist);
     list_init(&q_running);
     list_init(&q_ready_H);
     list_init(&q_ready_L);
 
+    assert(signal(SIGALRM, sighand) != SIG_ERR);
     size_t sz = 0x10000;
     tcb *tmpthread = (tcb*)calloc(1, sizeof(tcb));
     /* initializing the main thread */
@@ -132,54 +123,56 @@ t_init()
     tmpthread->context.uc_stack.ss_flags = 0;
     tmpthread->context.uc_link = NULL;
     getcontext(&tmpthread->context);
-    assert(tmpthread->context.uc_stack.ss_sp);
 
     tmpthread->priority = 1;
     tmpthread->thread_id = -1;
     tmpthread->thread_magic = MAGIC;
-    list_insert_head(&q_running, &tmpthread->elem);
-    assert(signal(SIGALRM, sighand) != SIG_ERR);
-    printf("Init finished!\n");
+    list_insert_head(&alllist, &tmpthread->elem);
+    thread_p *newthread = (thread_p *)calloc(1, sizeof(thread_p));
+    newthread->p = tmpthread;
+    list_insert_head(&q_running, &newthread->elem);
     ualarm(TIME, 0);
 }
 
 void
 t_terminate()
 {
-    printf("Running terminate\n");
     sighold(SIGALRM);
     ucontext_t *next;
+    tcb *tmpthread;
     int queueflag = 0;
     if (!is_list_empty(&q_ready_H)) {
         queueflag = 0;
-        next = &(list_entry(list_begin(&q_ready_H), tcb, elem)->context);
+        tmpthread = list_entry(list_begin(&q_ready_H), thread_p, elem)->p;
     }
     else if (!is_list_empty(&q_ready_L)) {
         queueflag = 1;
-        next = &(list_entry(list_begin(&q_ready_L), tcb, elem)->context);
+        tmpthread = list_entry(list_begin(&q_ready_L), thread_p, elem)->p;
     }
     else
         exit(0);
+    next = &tmpthread->context;
     struct list_elem *e = list_begin(&q_running);
-    assert(is_thread(e));
+    thread_p *tmp_p = list_entry(e, thread_p, elem);
+    tcb *tmp = tmp_p->p;
+    list_remove(&tmp->elem);
+    free(tmp);
     list_remove(e);
-    free(list_entry(e, tcb, elem));
-    tcb *tmpthread = (tcb*)calloc(1, sizeof(tcb));
+    free(tmp_p);
     /* problem: why must I build a new struct tmpthread, and 
      * insert(tmpthread->elem)? why can't I just do
      * insert(list_begin(&q_ready))  ????
      */
-    if (queueflag == 0)
-        *tmpthread = *list_entry(list_begin(&q_ready_H), tcb, elem);
-    else
-        *tmpthread = *list_entry(list_begin(&q_ready_L), tcb, elem);
-        
-    list_insert_head(&q_running, &tmpthread->elem);
-    if (queueflag == 0)
-        e = list_begin (&q_ready_H);
-    else
-        e = list_begin (&q_ready_L);
+    tmp_p = (thread_p *)calloc(1, sizeof(thread_p));
+    if (queueflag == 0) 
+        e = list_begin(&q_ready_H);
+    else if (queueflag == 1)
+        e = list_begin(&q_ready_L);
+    tmp_p->p = list_entry(e, thread_p, elem)->p;
+    list_insert_head(&q_running, &tmp_p->elem);
+
     list_remove(e);
+    free(list_entry(e, thread_p, elem));
     ualarm(TIME, 0);
     sigrelse(SIGALRM);
 
@@ -189,28 +182,31 @@ t_terminate()
 void
 t_shutdown()
 {
-    printf("Beginning shutdown\n");
     ualarm(0, 0);
     struct list_elem *e;
     tcb *tmp;
+    thread_p *tmp_p;
     while(!is_list_empty(&q_ready_H)) {
-        tmp = list_entry(list_begin(&q_ready_H), tcb, elem);
+        tmp_p = list_entry(list_begin(&q_ready_H), thread_p, elem);
         e = list_begin(&q_ready_H);
-        assert(is_thread(e));
         list_remove(e);
-        free(tmp);
+        free(tmp_p);
     }
     while(!is_list_empty(&q_ready_L)) {
-        tmp = list_entry(list_begin(&q_ready_L), tcb, elem);
+        tmp_p = list_entry(list_begin(&q_ready_L), thread_p, elem);
         e = list_begin(&q_ready_L);
-        assert(is_thread(e));
         list_remove(e);
-        free(tmp);
+        free(tmp_p);
     }
     while(!is_list_empty(&q_running)) {
-        tmp = list_entry(list_begin(&q_running), tcb, elem);
+        tmp_p = list_entry(list_begin(&q_running), thread_p, elem);
         e = list_begin(&q_running);
-        assert(is_thread(e));
+        list_remove(e);
+        free(tmp_p);
+    }
+    while(!is_list_empty(&alllist)) {
+        tmp = list_entry(list_begin(&alllist), tcb, elem);
+        e = list_begin(&alllist);
         list_remove(e);
         free(tmp);
     }
@@ -224,27 +220,26 @@ t_create(void (*fct)(int), int id, int pri)
     sighold(SIGALRM);
     tcb *tmpthread = (tcb*)calloc(1, sizeof(tcb));
     ucontext_t *uc = &tmpthread->context;
-
     getcontext(uc);
     uc->uc_stack.ss_sp = calloc(1, sz);  
     uc->uc_stack.ss_size = sz;
     uc->uc_stack.ss_flags = 0;
-    uc->uc_link = NULL;
+    uc->uc_link = &list_entry(list_begin(&q_running), thread_p, elem)->p->context;
     makecontext(uc, fct, 1, id);
 
     tmpthread->thread_id = id;
     tmpthread->priority = pri;
     tmpthread->thread_magic = MAGIC;
-    assert(is_thread(&tmpthread->elem));
+    list_insert_head(&alllist, &tmpthread->elem);
+
+    thread_p *newthread = (thread_p*)calloc(1, sizeof(thread_p));
+    newthread->p = tmpthread;
     if (pri == 0) {
-        list_insert_tail(&q_ready_H, &tmpthread->elem);
-        assert(is_thread(list_end(&q_ready_H)));
+        list_insert_tail(&q_ready_H, &newthread->elem);
     }
     else if (pri == 1) {
-        list_insert_tail(&q_ready_L, &tmpthread->elem);
-        assert(is_thread(list_end(&q_ready_L)));
+        list_insert_tail(&q_ready_L, &newthread->elem);
     }
     printf("Created a new thread ID = %d\n", id);
     sigrelse(SIGALRM);
-
 }
