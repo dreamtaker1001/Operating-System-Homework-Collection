@@ -22,30 +22,24 @@ sighand(int sig)
 void 
 t_yield(void)
 {
-    ualarm(0, 0);
+    //ualarm(0, 0);
     ucontext_t *curr = NULL, *next = NULL;
     tcb *running = NULL, *tcbnext = NULL;
     struct list_elem *e = NULL;
     assert(!is_list_empty(&q_running));
 
-    sighold(SIGALRM);
+    //sighold(SIGALRM);
     running = list_entry(list_begin(&q_running), thread_p, elem)->p;
     if (is_list_empty(&q_ready_H) && is_list_empty(&q_ready_L)) {
         printf("Q_ready_H and L are both empty!\n");
-        ualarm(TIME, 0);
+        //ualarm(TIME, 0);
         return;
     }
     if (is_list_empty(&q_ready_H) && running->priority == 0) {
         printf("Q_ready_H is empty and trying to insert H thread, not doing this!\n");
-        ualarm(TIME, 0);
+        //ualarm(TIME, 0);
         return;
     }
-    /*
-    for (e = list_begin(&alllist); e != list_tail(&alllist); 
-            e = list_next(e)) {
-        assert(is_thread(e));
-    }
-    */
     /* Move the running thread to tail of ready queue */
     int queueflag = -1;
     thread_p *tmp_p = (thread_p *)calloc(1, sizeof(thread_p));
@@ -83,10 +77,10 @@ t_yield(void)
     list_remove(e);
     free(tmp_p);
     printf("Ready to swapcontext...\n");
-    sigrelse(SIGALRM);
+    //sigrelse(SIGALRM);
     printf("After sigrelse...\n");
     
-    ualarm(TIME, 0);
+    //ualarm(TIME, 0);
     printf("after ualarm is set...\n");
     assert(curr);
     assert(next);
@@ -113,7 +107,7 @@ t_init()
     list_init(&q_ready_H);
     list_init(&q_ready_L);
 
-    assert(signal(SIGALRM, sighand) != SIG_ERR);
+    //assert(signal(SIGALRM, sighand) != SIG_ERR);
     size_t sz = 0x10000;
     tcb *tmpthread = (tcb*)calloc(1, sizeof(tcb));
     /* initializing the main thread */
@@ -131,13 +125,13 @@ t_init()
     thread_p *newthread = (thread_p *)calloc(1, sizeof(thread_p));
     newthread->p = tmpthread;
     list_insert_head(&q_running, &newthread->elem);
-    ualarm(TIME, 0);
+    //ualarm(TIME, 0);
 }
 
 void
 t_terminate()
 {
-    sighold(SIGALRM);
+    //sighold(SIGALRM);
     ucontext_t *next;
     tcb *tmpthread;
     int queueflag = 0;
@@ -173,16 +167,15 @@ t_terminate()
 
     list_remove(e);
     free(list_entry(e, thread_p, elem));
-    ualarm(TIME, 0);
-    sigrelse(SIGALRM);
-
+    //ualarm(TIME, 0);
+    //sigrelse(SIGALRM);
     setcontext(next);
 }
 
 void
 t_shutdown()
 {
-    ualarm(0, 0);
+    //ualarm(0, 0);
     struct list_elem *e;
     tcb *tmp;
     thread_p *tmp_p;
@@ -217,7 +210,7 @@ t_create(void (*fct)(int), int id, int pri)
 {
     size_t sz = 0x10000;
 
-    sighold(SIGALRM);
+    //sighold(SIGALRM);
     tcb *tmpthread = (tcb*)calloc(1, sizeof(tcb));
     ucontext_t *uc = &tmpthread->context;
     getcontext(uc);
@@ -241,5 +234,5 @@ t_create(void (*fct)(int), int id, int pri)
         list_insert_tail(&q_ready_L, &newthread->elem);
     }
     printf("Created a new thread ID = %d\n", id);
-    sigrelse(SIGALRM);
+    //sigrelse(SIGALRM);
 }
