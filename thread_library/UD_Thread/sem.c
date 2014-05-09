@@ -91,7 +91,10 @@ sem_wait(sem_t *sp)
     /*Possible bug point*/
     while(sem_try_lock(sp) != 0);
     ((sem*)sp)->value--;
+    //printf("Now, semaphore value is %d!\n", ((sem*)sp)->value);
     if ( ((sem*)sp)->value < 0 ) {
+        //printf("going to sem_yield...\n");
+        sem_unlock(sp);
         sem_yield(sp);
     }
     sem_unlock(sp);
@@ -107,9 +110,9 @@ sem_unblock(sem_t *sp)
     thread_p *tmp_p = (thread_p *)calloc(1, sizeof(thread_p));
     tmp_p->p = list_entry(list_begin(&sema->waiters), thread_p, elem)->p;
     if (tmp_p->p->priority == 0) 
-        list_insert_head(&q_ready_H, &tmp_p->elem);
+        list_insert_tail(&q_ready_H, &tmp_p->elem);
     else if (tmp_p->p->priority == 1)
-        list_insert_head(&q_ready_L, &tmp_p->elem);
+        list_insert_tail(&q_ready_L, &tmp_p->elem);
     e = list_begin(&sema->waiters);
     tmp_p = list_entry(e, thread_p, elem);
     list_remove(e);

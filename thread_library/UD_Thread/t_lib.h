@@ -31,7 +31,7 @@ struct thr {
 typedef struct thr thread_p;
 
 struct semaphore {
-    unsigned int value;
+    int value;
     int flag;
     struct list waiters;     
 };

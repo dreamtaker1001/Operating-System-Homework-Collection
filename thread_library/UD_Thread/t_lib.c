@@ -31,12 +31,12 @@ t_yield(void)
     //sighold(SIGALRM);
     running = list_entry(list_begin(&q_running), thread_p, elem)->p;
     if (is_list_empty(&q_ready_H) && is_list_empty(&q_ready_L)) {
-        printf("Q_ready_H and L are both empty!\n");
+        //printf("Q_ready_H and L are both empty!\n");
         //ualarm(TIME, 0);
         return;
     }
     if (is_list_empty(&q_ready_H) && running->priority == 0) {
-        printf("Q_ready_H is empty and trying to insert H thread, not doing this!\n");
+        //printf("Q_ready_H is empty and trying to insert H thread, not doing this!\n");
         //ualarm(TIME, 0);
         return;
     }
