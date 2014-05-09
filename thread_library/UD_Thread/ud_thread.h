@@ -19,7 +19,7 @@ t_terminate(void);
 void
 t_shutdown(void);
 
-int sem_init(sem_t **sp, unsigned int count);
+int sem_init(sem_t **sp, int count);
 void sem_wait(sem_t *sp);
 void sem_signal(sem_t *sp);
 void sem_destroy(sem_t **sp);

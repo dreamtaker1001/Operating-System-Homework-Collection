@@ -76,18 +76,14 @@ t_yield(void)
     tmp_p = list_entry(e, thread_p, elem);
     list_remove(e);
     free(tmp_p);
-    printf("Ready to swapcontext...\n");
     //sigrelse(SIGALRM);
-    printf("After sigrelse...\n");
     
     //ualarm(TIME, 0);
-    printf("after ualarm is set...\n");
     assert(curr);
     assert(next);
     if (swapcontext(curr, next) == -1) {
         printf("Swapcontext error: %s\n", strerror(errno));   
     }
-    printf("after swapcontext\n");
 }
 
 int
@@ -233,6 +229,5 @@ t_create(void (*fct)(int), int id, int pri)
     else if (pri == 1) {
         list_insert_tail(&q_ready_L, &newthread->elem);
     }
-    printf("Created a new thread ID = %d\n", id);
     //sigrelse(SIGALRM);
 }

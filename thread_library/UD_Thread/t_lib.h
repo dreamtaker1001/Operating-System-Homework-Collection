@@ -9,6 +9,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <signal.h>
+#include "ud_thread.h"
 #include "list.h"
 
 #define MAGIC 0x123456
@@ -31,10 +32,16 @@ typedef struct thr thread_p;
 
 struct semaphore {
     unsigned int value;
+    int flag;
     struct list waiters;     
 };
 
 typedef struct semaphore sem;
+
+int sem_try_lock(sem_t*);
+void sem_unlock(sem_t*);
+void sem_yield(sem_t*);
+void sem_unblock(sem_t*);
 
 void
 sighand(int);

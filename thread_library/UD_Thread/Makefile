@@ -53,8 +53,8 @@ test02.o: test02.c ud_thread.h Makefile
 test03.o: test03.c ud_thread.h Makefile
 	${CC} ${CFLAGS} -c test03.c
 	
-philosopher.o: philosopher.c ud_thread.h Makefile
-	${CC} ${CFLAGS} -c philosopher.c
+philosopher.o: philosophers.c ud_thread.h Makefile
+	${CC} ${CFLAGS} -c philosophers.c -o philosopher.o
 
 test04.o: test04.c ud_thread.h Makefile
 	${CC} ${CFLAGS} -c test04.c
@@ -71,7 +71,7 @@ test02: test02.o t_lib.a Makefile
 test03:	test03.o t_lib.a Makefile
 	${CC} ${CFLAGS} test03.o t_lib.a -o test03
 
-philosopher:	philosopher.o t_lib.a Makefile
+philosopher: philosopher.o t_lib.a Makefile
 	${CC} ${CFLAGS} philosopher.o t_lib.a -o philosopher
 
 test04: test04.o t_lib.a Makefile
