@@ -49,4 +49,10 @@ sighand(int);
 int
 is_thread(struct list_elem*);
 
+void
+free_node(struct list_elem*);
+
+int
+curr_tid(void);
+
 #endif

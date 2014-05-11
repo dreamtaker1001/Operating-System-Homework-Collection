@@ -91,9 +91,7 @@ sem_wait(sem_t *sp)
     /*Possible bug point*/
     while(sem_try_lock(sp) != 0);
     ((sem*)sp)->value--;
-    //printf("Now, semaphore value is %d!\n", ((sem*)sp)->value);
     if ( ((sem*)sp)->value < 0 ) {
-        //printf("going to sem_yield...\n");
         sem_unlock(sp);
         sem_yield(sp);
     }
