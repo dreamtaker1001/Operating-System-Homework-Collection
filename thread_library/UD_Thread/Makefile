@@ -4,21 +4,21 @@ CC = gcc
 #CFLAGS = -g -O0
 CFLAGS = -g -lmcheck -O0 
 
-LIBOBJS = t_lib.o list.o sem.o
+LIBOBJS = t_lib.o list.o sem.o mailbox.o
 
-TSTOBJS = test01a.o test02.o test04.o test07.o test03.o philosopher.o 
+TSTOBJS = test06.o 
 
 # specify the executable 
 
-EXECS = test01a test02 test04 test07 test03 philosopher
+EXECS = test06
 
 # specify the source files
 
-LIBSRCS = t_lib.c list.c sem.c
+LIBSRCS = t_lib.c list.c sem.c mailbox.c
 
-TSTSRCS = test01a.c test02.c test04.c test07.c test03.c philosopher.c
-TSTEXES = test01a test02 test04 test07 test03 philosopher
-TSTOUTS = 1a.txt 2.txt 4.txt 7.txt 3.txt
+TSTSRCS = test06.c
+TSTEXES = test06 
+TSTOUTS = 6.txt 
 
 # ar creates the static thread library
 
@@ -29,11 +29,7 @@ t_lib.a: ${LIBOBJS} Makefile
 # files they depend on, etc.
 
 test: ${TSTEXES} ${TSTOUTS}
-	./test01a | diff 1a.txt - > /dev/null && echo "test01a passed~" || echo "test01a FAILED!"
-	./test02 | diff 2.txt - > /dev/null && echo "test02 passed~" || echo "test02 FAILED!"
-	./test03 | diff 3.txt - > /dev/null && echo "test03 passed~" || echo "test03 FAILED!"
-	#./test04 | diff 4.txt - > /dev/null && echo "test04 passed~" || echo "test04 FAILED!"
-	#./test07 | diff 7.txt - > /dev/null && echo "test07 passed~" || echo "test07 FAILED!"
+	./test06 | diff 6.txt - > /dev/null && echo "test06 passed~" || echo "test06 FAILED!"
 
 t_lib.o: t_lib.c t_lib.h Makefile
 	${CC} ${CFLAGS} -c t_lib.c 
@@ -44,41 +40,14 @@ sem.o: sem.c t_lib.h ud_thread.h Makefile
 list.o:	list.h list.c Makefile
 	${CC} ${CFLAGS} -c list.c
 
-test01a.o: test01a.c ud_thread.h Makefile
-	${CC} ${CFLAGS} -c test01a.c
+mailbox.o: mailbox.c t_lib.h ud_thread.h Makefile
+	${CC} ${CFLAGS} -c mailbox.c
 
-test02.o: test02.c ud_thread.h Makefile
-	${CC} ${CFLAGS} -c test02.c
+test06.o: test06.c ud_thread.h list.h t_lib.h
+	${CC} ${CFLAGS} -c test06.c
 
-test03.o: test03.c ud_thread.h Makefile
-	${CC} ${CFLAGS} -c test03.c
-	
-philosopher.o: philosophers.c ud_thread.h Makefile
-	${CC} ${CFLAGS} -c philosophers.c -o philosopher.o
-
-test04.o: test04.c ud_thread.h Makefile
-	${CC} ${CFLAGS} -c test04.c
-
-test07.o: test07.c ud_thread.h Makefile
-	${CC} ${CFLAGS} -c test07.c
-
-test01a: test01a.o t_lib.a Makefile
-	${CC} ${CFLAGS} test01a.o t_lib.a -o test01a
-
-test02: test02.o t_lib.a Makefile
-	${CC} ${CFLAGS} test02.o t_lib.a -o test02
-
-test03:	test03.o t_lib.a Makefile
-	${CC} ${CFLAGS} test03.o t_lib.a -o test03
-
-philosopher: philosopher.o t_lib.a Makefile
-	${CC} ${CFLAGS} philosopher.o t_lib.a -o philosopher
-
-test04: test04.o t_lib.a Makefile
-	${CC} ${CFLAGS} test04.o t_lib.a -o test04
-
-test07: test07.o t_lib.a Makefile
-	${CC} ${CFLAGS} test07.o t_lib.a -o test07
+test06: test06.o t_lib.a
+	${CC} ${CFLAGS} test06.o t_lib.a -o test06
 
 clean:
 	rm -f t_lib.a ${EXECS} ${LIBOBJS} ${TSTOBJS} 

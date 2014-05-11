@@ -139,7 +139,7 @@ void
 sem_destroy(sem_t **sp)
 {
     struct list_elem *e = NULL;
-    sem *sema = *sp;
+    sem *sema = (sem*)*sp;
     tcb *tcbtmp = NULL;
     struct list *list = &sema->waiters;
     while (!is_list_empty(list)) {
