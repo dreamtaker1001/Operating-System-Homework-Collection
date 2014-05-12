@@ -6,6 +6,10 @@
 int global_ready = 0;
 static mbox *global_mbox;
 extern struct list q_running;
+sem_t *sema_block_sender;
+sem_t *sema_block_receiver;
+int sema_sender_inited = 0;
+int sema_receiver_inited = 0;
 
 int
 mbox_create(mbox **mb)
@@ -121,7 +125,7 @@ receive(int *tid, char *msg, int *len)
         }
         e = list_next(e);
     }
-    if (flag == 0) {
+    if (flag == 0 || global_ready == 0) {
         *tid = 0;
         *len = 0;
         return;
@@ -135,13 +139,63 @@ receive(int *tid, char *msg, int *len)
 }
 
 void
+blocking_sem_init()
+{
+    if (sema_sender_inited == 0) {
+        sem_init(&sema_block_sender, 0);
+        sema_sender_inited = 1;
+    }
+    if (sema_receiver_inited == 0) {
+        sem_init(&sema_block_receiver, 0);
+        sema_receiver_inited = 1;
+    }
+}
+
+void
 block_send(int tid, char *msg, int length)
 {
-
+    blocking_sem_init();
+    send(tid, msg, length);
+    sem_signal(sema_block_receiver);
+    sem_wait(sema_block_sender);
 }
 
 void
 block_receive(int *tid, char *msg, int *length)
 {
+    int curr = curr_tid();
+    int flag = 0;
+    if (global_ready == 0) {
+        mbox_create(&global_mbox);
+        assert(global_mbox->mbox_sem);
+        global_ready = 1;
+    }
+    blocking_sem_init();
+    struct list *tmplist = &(global_mbox->msg);
+    struct list_elem *e = list_begin(tmplist);
+    struct messageNode *tmpnode = NULL;
+    
+    while (1) {
+        e = list_begin(tmplist);
+        while(is_interior(e)) {
+            tmpnode = list_entry(e, struct messageNode, elem);
+            if (*tid == 0 || *tid == tmpnode->sender) {
+                flag = 1;
+                break;
+            }
+            e = list_next(e);
+        }
+        if (flag == 0) {
+            sem_wait(sema_block_receiver);
+        }
+        else {
+            strcpy(msg, tmpnode->message);
+            *tid = tmpnode->sender;
+            *length = tmpnode->len;
+            break;
+        }
+    }
+    free_node(e);
+    sem_signal(sema_block_sender);
 
 }

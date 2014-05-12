@@ -55,4 +55,7 @@ free_node(struct list_elem*);
 int
 curr_tid(void);
 
+void
+blocking_sem_init();
+
 #endif

@@ -11,7 +11,6 @@ struct messageNode {
     int len;          // length of the message 
     int sender;       // TID of sender thread 
     int receiver;     // TID of receiver thread 
-    int passing;
     struct list_elem elem;
 };
 
