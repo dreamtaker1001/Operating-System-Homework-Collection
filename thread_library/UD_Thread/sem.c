@@ -12,7 +12,7 @@ extern struct list q_ready_L;
 int 
 sem_init(sem_t **sp, int count)
 {
-    *sp = (sem*)malloc(sizeof(sem));
+    *sp = (sem*)calloc(1, sizeof(sem));
     list_init(&(((sem*)*sp)->waiters));
     ((sem*)*sp)->value = count;
     ((sem*)*sp)->flag = 0;

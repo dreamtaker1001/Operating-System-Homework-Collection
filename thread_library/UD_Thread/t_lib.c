@@ -116,6 +116,9 @@ t_init()
 
     tmpthread->priority = 1;
     tmpthread->thread_id = -1;
+    list_init(&tmpthread->messagequeue);
+    sem_init(&tmpthread->sem_block_sender, 1);
+    sem_init(&tmpthread->sem_block_receiver, 1);
     tmpthread->thread_magic = MAGIC;
     list_insert_head(&alllist, &tmpthread->elem);
     thread_p *newthread = (thread_p *)calloc(1, sizeof(thread_p));
@@ -218,6 +221,9 @@ t_create(void (*fct)(int), int id, int pri)
 
     tmpthread->thread_id = id;
     tmpthread->priority = pri;
+    list_init(&tmpthread->messagequeue);
+    sem_init(&tmpthread->sem_block_sender, 1);
+    sem_init(&tmpthread->sem_block_receiver, 1);
     tmpthread->thread_magic = MAGIC;
     list_insert_head(&alllist, &tmpthread->elem);
 

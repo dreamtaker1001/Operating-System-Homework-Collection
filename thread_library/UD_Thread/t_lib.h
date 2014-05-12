@@ -18,6 +18,9 @@ struct tcb {
     int thread_id;
     int priority;
     ucontext_t context;
+    struct list messagequeue;
+    sem_t *sem_block_sender;
+    sem_t *sem_block_receiver;
     int thread_magic;
     struct list_elem elem;
 };
@@ -55,7 +58,7 @@ free_node(struct list_elem*);
 int
 curr_tid(void);
 
-void
-blocking_sem_init();
+struct list_elem *
+locate_tid(int);
 
 #endif

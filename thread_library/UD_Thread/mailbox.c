@@ -3,13 +3,8 @@
 #include <string.h>
 #include <assert.h>
 
-int global_ready = 0;
-static mbox *global_mbox;
 extern struct list q_running;
-sem_t *sema_block_sender;
-sem_t *sema_block_receiver;
-int sema_sender_inited = 0;
-int sema_receiver_inited = 0;
+extern struct list alllist;
 
 int
 mbox_create(mbox **mb)
@@ -84,15 +79,25 @@ curr_tid(void)
     return p->p->thread_id;
 }
 
+struct list_elem *
+locate_tid(int tid)
+{
+    struct list_elem *e = list_begin(&alllist);
+    int flag = 0;
+    tcb *tcbtmp = NULL;
+    while(is_interior(e)) {
+        tcbtmp = list_entry(e, tcb, elem);
+        if (tcbtmp->thread_id == tid)
+            return e;
+        e = list_next(e);
+    }
+    printf("ERROR: tid not found!\n");
+    return NULL;
+}
+
 void
 send(int tid, char *msg, int len)
 {
-    if (global_ready == 0) {
-        mbox_create(&global_mbox);
-        assert(global_mbox->mbox_sem);
-        global_ready = 1;
-    }
-    
     struct messageNode *newnode = (struct messageNode*) 
         calloc(1, sizeof(struct messageNode));
     newnode->message = (char*)calloc(1, len+1);
@@ -101,11 +106,9 @@ send(int tid, char *msg, int len)
     newnode->sender = curr_tid();
     newnode->receiver = tid;
 
-    assert(global_mbox);
-    assert(global_mbox->mbox_sem);
-    sem_wait(global_mbox->mbox_sem);
-    list_insert_tail(&global_mbox->msg, &newnode->elem);
-    sem_signal(global_mbox->mbox_sem);
+    struct list_elem *e = locate_tid(tid);
+    tcb *tcbtmp = list_entry(e, tcb, elem);
+    list_insert_tail(&tcbtmp->messagequeue, &newnode->elem);
 }
 
 void
@@ -113,51 +116,46 @@ receive(int *tid, char *msg, int *len)
 {
     int curr = curr_tid();
     int flag = 0;
-    struct list *tmplist = &(global_mbox->msg);
-    struct list_elem *e = list_begin(tmplist);
+
+    struct list_elem *e = locate_tid(curr);
+    struct list *tmplist = NULL;
+    tmplist = &list_entry(e, tcb, elem)->messagequeue;
+    e = list_begin(tmplist);
     struct messageNode *tmpnode = NULL;
     
-    while(is_interior(e)) {
+    if (is_interior(e)) {
         tmpnode = list_entry(e, struct messageNode, elem);
-        if (*tid == 0 || *tid == tmpnode->sender) {
-            flag = 1;
-            break;
-        }
-        e = list_next(e);
-    }
-    if (flag == 0 || global_ready == 0) {
-        *tid = 0;
-        *len = 0;
-        return;
-    }
-    else {
         strcpy(msg, tmpnode->message);
         *tid = tmpnode->sender;
         *len = tmpnode->len;
+    }
+    else {
+        *tid = 0;
+        *len = 0;
+        return;
     }
     free_node(e);
 }
 
 void
-blocking_sem_init()
-{
-    if (sema_sender_inited == 0) {
-        sem_init(&sema_block_sender, 0);
-        sema_sender_inited = 1;
-    }
-    if (sema_receiver_inited == 0) {
-        sem_init(&sema_block_receiver, 0);
-        sema_receiver_inited = 1;
-    }
-}
-
-void
 block_send(int tid, char *msg, int length)
 {
-    blocking_sem_init();
-    send(tid, msg, length);
-    sem_signal(sema_block_receiver);
-    sem_wait(sema_block_sender);
+    struct messageNode *newnode = (struct messageNode*) 
+        calloc(1, sizeof(struct messageNode));
+    newnode->message = (char*)calloc(1, length+1);
+    strcpy(newnode->message, msg);
+    newnode->len = length;
+    newnode->sender = curr_tid();
+    newnode->receiver = tid;
+
+    struct list_elem *e = locate_tid(tid);
+    tcb *tcbtmp = list_entry(e, tcb, elem);
+    list_insert_tail(&tcbtmp->messagequeue, &newnode->elem);
+
+    assert(tcbtmp->sem_block_receiver);
+    assert(tcbtmp->sem_block_sender);
+    sem_signal(tcbtmp->sem_block_receiver);
+    sem_wait(tcbtmp->sem_block_sender);
 }
 
 void
@@ -165,30 +163,21 @@ block_receive(int *tid, char *msg, int *length)
 {
     int curr = curr_tid();
     int flag = 0;
-    if (global_ready == 0) {
-        mbox_create(&global_mbox);
-        assert(global_mbox->mbox_sem);
-        global_ready = 1;
-    }
-    blocking_sem_init();
-    struct list *tmplist = &(global_mbox->msg);
-    struct list_elem *e = list_begin(tmplist);
+
+    struct list_elem *e = locate_tid(curr);
+    tcb *tcbtmp = list_entry(e, tcb, elem);
+    struct list *tmplist = NULL;
+    tmplist = &tcbtmp->messagequeue;
+    e = list_begin(tmplist);
     struct messageNode *tmpnode = NULL;
-    
-    while (1) {
+
+    while(1) {
         e = list_begin(tmplist);
-        while(is_interior(e)) {
-            tmpnode = list_entry(e, struct messageNode, elem);
-            if (*tid == 0 || *tid == tmpnode->sender) {
-                flag = 1;
-                break;
-            }
-            e = list_next(e);
-        }
-        if (flag == 0) {
-            sem_wait(sema_block_receiver);
-        }
+        if (!is_interior(e))
+            sem_wait(tcbtmp->sem_block_receiver);
         else {
+            assert(is_interior(e));
+            tmpnode = list_entry(e, struct messageNode, elem);
             strcpy(msg, tmpnode->message);
             *tid = tmpnode->sender;
             *length = tmpnode->len;
@@ -196,6 +185,5 @@ block_receive(int *tid, char *msg, int *length)
         }
     }
     free_node(e);
-    sem_signal(sema_block_sender);
-
+    sem_signal(tcbtmp->sem_block_sender);
 }
