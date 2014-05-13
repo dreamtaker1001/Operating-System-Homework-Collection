@@ -61,4 +61,7 @@ curr_tid(void);
 struct list_elem *
 locate_tid(int);
 
+void
+check_sem(void);
+
 #endif

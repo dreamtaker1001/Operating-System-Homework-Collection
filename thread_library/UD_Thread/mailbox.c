@@ -138,6 +138,19 @@ receive(int *tid, char *msg, int *len)
 }
 
 void
+check_sem()
+{
+    struct list_elem *e = NULL;
+    tcb *tmp = NULL;
+    e = list_begin(&alllist);
+    while(is_interior(e)) {
+        tmp = list_entry(e, tcb, elem);
+        printf("Thread %d's sem info: send-(%d), recv-(%d).\n", tmp->thread_id, ((sem*)(tmp->sem_block_sender))->value, ((sem*)(tmp->sem_block_receiver))->value);
+        e = list_next(e);
+    }
+}
+
+void
 block_send(int tid, char *msg, int length)
 {
     struct messageNode *newnode = (struct messageNode*) 
@@ -150,12 +163,12 @@ block_send(int tid, char *msg, int length)
 
     struct list_elem *e = locate_tid(tid);
     tcb *tcbtmp = list_entry(e, tcb, elem);
+    e = locate_tid(curr_tid());
+    tcb *tcbself = list_entry(e, tcb, elem);
     list_insert_tail(&tcbtmp->messagequeue, &newnode->elem);
 
-    assert(tcbtmp->sem_block_receiver);
-    assert(tcbtmp->sem_block_sender);
     sem_signal(tcbtmp->sem_block_receiver);
-    sem_wait(tcbtmp->sem_block_sender);
+    sem_wait(tcbself->sem_block_sender);
 }
 
 void
@@ -173,8 +186,9 @@ block_receive(int *tid, char *msg, int *length)
 
     while(1) {
         e = list_begin(tmplist);
-        if (!is_interior(e))
+        if (!is_interior(e)) {
             sem_wait(tcbtmp->sem_block_receiver);
+        }
         else {
             assert(is_interior(e));
             tmpnode = list_entry(e, struct messageNode, elem);
@@ -185,5 +199,7 @@ block_receive(int *tid, char *msg, int *length)
         }
     }
     free_node(e);
-    sem_signal(tcbtmp->sem_block_sender);
+    e = locate_tid(*tid);
+    tcb *sender = list_entry(e, tcb, elem);
+    sem_signal(sender->sem_block_sender);
 }
