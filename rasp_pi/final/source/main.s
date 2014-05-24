@@ -17,25 +17,36 @@ main:
 
 ptn1$:
     ptrn .req r4
-    ldr ptrn, =pattern1
+    ldr ptrn, =patternCISC
     ldr ptrn, [ptrn]
     seq .req r5
     mov seq, #0
     bl loop$
 ptn2$:
     ptrn .req r4
-    ldr ptrn, =pattern2
+    ldr ptrn, =patternC
+    ldr ptrn, [ptrn]
+    seq .req r5
+    mov seq, #0b11110
+    bl loop$
+    ldr r0, =2000000
+    bl TimerWait
+ptn3$:
+    ptrn .req r4
+    ldr ptrn, =pattern663
     ldr ptrn, [ptrn]
     seq .req r5
     mov seq, #0
     bl loop$
-ptn3$:
+ptn4$:
     ptrn .req r4
     ldr ptrn, =pattern3
     ldr ptrn, [ptrn]
     seq .req r5
-    mov seq, #0
+    mov seq, #26
     bl loop$
+    ldr r0, =4000000
+    bl TimerWait
     b ptn1$
 loop$:
     pinNum .req r0
@@ -62,11 +73,11 @@ loop$:
 
 .section .data
 .align 2
-pattern1:
+patternCISC:
 .int 0b10001010001010101010101000101000
-.align 2
-pattern2:
-.int 0b01010100010101010100011111111110
-.align 2
+patternC:
+.int 0b10111111111111111111111111111111
+pattern663:
+.int 0b00101010101010101000101010101000
 pattern3:
-.int 0b11111111111111110001000101010101
+.int 0b10001011111111111111111111111111
