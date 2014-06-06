@@ -5,6 +5,7 @@ extern char *prompt;
 extern char *cwd;
 extern char *last_dir;
 extern char *cmd_char;
+extern char *cmd_char_backup;
 extern struct cmd *cmd_head;
 struct alias *alias_head;
 char *p;
@@ -21,89 +22,91 @@ struct pathelement *path_tmp = NULL;
 void
 shell_init(void)
 {
-  prompt = (char*)malloc(sizeof(char[16]));
-  cwd = (char*) malloc(sizeof(char[255]));
-  last_dir = (char*)malloc(sizeof(char[255])); 
-  strcpy(last_dir, "");
+    prompt = (char*)malloc(sizeof(char[16]));
+    cwd = (char*) malloc(sizeof(char[255]));
+    last_dir = (char*)malloc(sizeof(char[255])); 
+    strcpy(last_dir, "");
 
-  cmd_char = (char*)calloc(1, sizeof(char[255]));
-  cmd_head = (struct cmd*) malloc(sizeof(struct cmd));
-  cmd_head->element = NULL;
-  cmd_head->next = NULL;
+    cmd_char = (char*)calloc(1, sizeof(char[255]));
+    cmd_char_backup = (char*)calloc(1, sizeof(char[255]));
+    cmd_head = (struct cmd*) malloc(sizeof(struct cmd));
+    cmd_head->element = NULL;
+    cmd_head->next = NULL;
 
-  p = (char*)malloc(sizeof(char[128]));
-  printf("*** Welcome to Yuqi's Shell ! ***\n");
-  path_list = (struct pathelement*)malloc (sizeof(struct pathelement));
-  path_list -> next = NULL;
-  path_list -> element = NULL;
-  if (getcwd(cwd, 255) == NULL) {
-    printf("YuqiShell: getcwd error: %s\n", strerror(errno));
-  }
-  /* This is just first_step initialization 
-   * to prevent myself from forgetting it 
-   * as well as my hands are cut as a consequence...
-   */
-  strcpy(prompt, "user");
-  bg_init();
+    p = (char*)malloc(sizeof(char[128]));
+    printf("*** Welcome to Yuqi's Shell ! ***\n");
+    path_list = (struct pathelement*)malloc (sizeof(struct pathelement));
+    path_list -> next = NULL;
+    path_list -> element = NULL;
+    if (getcwd(cwd, 255) == NULL) {
+        printf("YuqiShell: getcwd error: %s\n", strerror(errno));
+    }
+    /* This is just first_step initialization 
+     * to prevent myself from forgetting it 
+     * as well as my hands are cut as a consequence...
+     */
+    strcpy(prompt, "user");
+    bg_init();
 
-  path_list = get_path();
-  print_env_path();
-  alias_init();
-  history_init();
-  noclobber = 0;
+    path_list = get_path();
+    print_env_path();
+    alias_init();
+    history_init();
+    noclobber = 0;
 }
 
 /* This initializes the alias system */
 void
 alias_init(void)
 {
-  alias_head = (struct alias*)calloc(1, sizeof(struct alias));
-  alias_head->old_name = NULL;
-  alias_head->new_name = NULL;
-  alias_head->next = NULL;
+    alias_head = (struct alias*)calloc(1, sizeof(struct alias));
+    alias_head->old_name = NULL;
+    alias_head->new_name = NULL;
+    alias_head->next = NULL;
 }
 
 /* get_path() function, used to get the current PATH variable*/
-struct pathelement *get_path()
+struct pathelement 
+*get_path()
 {
-  /* get the PATH variable from system,
-   * and copies it to env_path (char* pointer)
-   */
-  p = getenv("PATH");
-  env_path = (char*)malloc((strlen(p)+1)*sizeof(char));
-  strncpy(env_path, p, strlen(p));
-  env_path[strlen(p)] = '\0'; 
+    /* get the PATH variable from system,
+     * and copies it to env_path (char* pointer)
+     */
+    p = getenv("PATH");
+    env_path = (char*)malloc((strlen(p)+1)*sizeof(char));
+    strncpy(env_path, p, strlen(p));
+    env_path[strlen(p)] = '\0'; 
 
-  /* Separate env_path, and build the linked list path_list. */
-  p = strtok(env_path, ":");
-  path_tmp = path_list;
-  do {
-    if (path_list -> element == NULL)
-        path_list -> element = p;
-    else {
-      path_tmp -> next = calloc (1, sizeof(struct pathelement));
-      path_tmp = path_tmp -> next;
-      path_tmp -> element = p;
-      path_tmp -> next = NULL;
-    }
-  } while (p = strtok(NULL, ":"));
- 
-  return path_list;
+    /* Separate env_path, and build the linked list path_list. */
+    p = strtok(env_path, ":");
+    path_tmp = path_list;
+    do {
+        if (path_list -> element == NULL)
+            path_list -> element = p;
+        else {
+            path_tmp -> next = calloc (1, sizeof(struct pathelement));
+            path_tmp = path_tmp -> next;
+            path_tmp -> element = p;
+            path_tmp -> next = NULL;
+        }
+    } while (p = strtok(NULL, ":"));
+
+    return path_list;
 }
 
 /* This prints the PATH just gotten from system */
 void
 print_env_path()
 {
-  printf("YuqiShell: The PATH variable in the current system is:\n\t");
-  path_tmp = path_list;
-  while (path_tmp != NULL) {
-    printf("%s", path_tmp->element);
-    path_tmp = path_tmp -> next;
-    if (path_tmp)
-      printf(":");
-  }
-  puts("\n");
+    printf("YuqiShell: The PATH variable in the current system is:\n\t");
+    path_tmp = path_list;
+    while (path_tmp != NULL) {
+        printf("%s", path_tmp->element);
+        path_tmp = path_tmp -> next;
+        if (path_tmp)
+            printf(":");
+    }
+    puts("\n");
 }
 
 /* The before_exit function. Deals with tracking the status of the
@@ -156,8 +159,8 @@ main(int argc, char** argv, char** envp)
         status = respond_cycle();
         if (status == EXIT_SHELL)
             break;
+        history_add();
         prepare_for_next_cycle();
-        history_add(cmd_char);
     }
     //before_exit(status);
     fflush(stdout);

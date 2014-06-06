@@ -7,6 +7,7 @@
 char* prompt;
 char* cwd;
 char* cmd_char;
+char* cmd_char_backup;
 struct cmd *cmd_tmp;
 struct cmd *cmd_head;
 struct history *hist_head;
@@ -37,6 +38,7 @@ respond_cycle()
     fflush(stdout);
     signal(SIGINT, sigint_handler);
     fgets(cmd_char, 255, stdin); 
+    strcpy(cmd_char_backup, cmd_char);
     strcpy(tty, ttyname(1));
 
     /* deals with IPC stuff */
@@ -110,9 +112,8 @@ void
 prepare_for_next_cycle()
 {
     struct cmd *cmd_next;
-    if (cmd_char) {
-        memset(cmd_char, 0, sizeof(cmd_char));
-    }
+    memset(cmd_char, 0, sizeof(cmd_char));
+    memset(cmd_char_backup, 0, sizeof(cmd_char_backup));
     if (cmd_head) {
         cmd_tmp = cmd_head;
         while(cmd_tmp) {
@@ -139,6 +140,7 @@ void
 history_init(void)
 {
     hist_head = (struct history*)malloc(sizeof(struct history));
+    hist_head->cmd = NULL;
     hist_curr = hist_head;
 }
 
@@ -151,12 +153,12 @@ struct history
     }
     else {
         struct history *new = (struct history*)malloc(sizeof(struct history));
-        hist_curr -> next = new;
-        hist_curr = new;
+        hist_curr->next = new;
+        hist_curr = hist_curr->next;
     }
-    hist_curr -> next = NULL;
+    hist_curr->next = NULL;
     hist_curr->cmd = (char*)malloc((strlen(cmd_char)+1)*sizeof(char));
-    strcpy(hist_curr->cmd, cmd_char);
+    strcpy(hist_curr->cmd, cmd_char_backup);
     return hist_curr;
 }
 
