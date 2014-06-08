@@ -157,7 +157,7 @@ struct history
         hist_curr = hist_curr->next;
     }
     hist_curr->next = NULL;
-    hist_curr->cmd = (char*)malloc((strlen(cmd_char)+1)*sizeof(char));
+    hist_curr->cmd = (char*)malloc((strlen(cmd_char_backup)+1)*sizeof(char));
     strcpy(hist_curr->cmd, cmd_char_backup);
     return hist_curr;
 }
@@ -232,7 +232,11 @@ find_cmd()
 {
     int return_value = 0;
     /* find_alias */
-    strcpy (cmd_head->element, find_alias(cmd_head->element));
+    char *char_tmp = (char*)calloc(1, strlen(cmd_head->element)+1);
+    strcpy (char_tmp, find_alias(cmd_head->element));
+    strcpy (cmd_head->element, char_tmp);
+    free(char_tmp);
+    char_tmp = NULL;
 
     /* exit */
     if (strcmp(cmd_head->element, "exit") == 0) {

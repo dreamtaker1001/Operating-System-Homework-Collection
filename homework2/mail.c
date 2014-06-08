@@ -29,7 +29,6 @@ cmd_watchmail(int argc, char** argv)
     }
 }
 
-
 /* adds a watchmail option */
 void
 watchmail_add(char* to_add)
@@ -79,12 +78,11 @@ watchmail_remove(char* to_remove)
         }
         tmp2->next = tmp->next;
     }
-    //debug information
-    printf("the tid to cancel is : %d\n", tmp->tid);
     while (pthread_cancel(tmp->tid) != 0) {
         printf("YuqiShell: watchmail: error: %s\n", strerror(errno));
     }
     free(tmp);
+    printf("YuqiShell: watchmail: stopped watching mail %s\n", to_remove);
     return;
 }
 
