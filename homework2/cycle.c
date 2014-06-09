@@ -151,6 +151,8 @@ struct history
     if (hist_head->cmd == NULL) {
         hist_curr = hist_head;
     }
+    if (strcmp(cmd_char_backup, "\n") == 0)
+        return hist_curr;
     else {
         struct history *new = (struct history*)malloc(sizeof(struct history));
         hist_curr->next = new;
@@ -232,7 +234,7 @@ find_cmd()
 {
     int return_value = 0;
     /* find_alias */
-    char *char_tmp = (char*)calloc(1, strlen(cmd_head->element)+1);
+    char *char_tmp = (char*)calloc(1, 512);
     strcpy (char_tmp, find_alias(cmd_head->element));
     strcpy (cmd_head->element, char_tmp);
     free(char_tmp);
