@@ -1,7 +1,7 @@
-Operating-System-Homework-UD-CISC-663
+Operating-System-Homework-Collection
 =====================================
 
-The programming assignments for CISC-663 Operating Systems 2014 Spring semester, University of Delaware.
+The programming assignments I did for the operating system course.
 
 Contents
 ----------
@@ -11,4 +11,6 @@ Contents
 
 * generic-queue and generic-queue-python - This is a generic queue programming exercise, intended for the thread library project.
 
-* thread\_library - This is the thread library project, with starter files ud\_thread.h
+* thread\_library - This is the thread library project, with starter files mythread.h
+
+* rasp\_pi - This is the "device driver" project done on raspberry pi, written in armv7 assembly code, followed the instruction of "Baking Pi", yet added more patterns to flash the morse code on the OK LED light.
