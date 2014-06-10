@@ -148,11 +148,12 @@ history_init(void)
 struct history
 *history_add(void)
 {
+    if (strcmp(cmd_char_backup, "\n") == 0) {
+        return hist_curr;
+    }
     if (hist_head->cmd == NULL) {
         hist_curr = hist_head;
     }
-    if (strcmp(cmd_char_backup, "\n") == 0)
-        return hist_curr;
     else {
         struct history *new = (struct history*)malloc(sizeof(struct history));
         hist_curr->next = new;
@@ -217,12 +218,17 @@ parse_cmd()
     cmd_tmp = cmd_head;
     argc = count;
     argv = (char**)malloc((count+1)*sizeof(char*));
-    for (index = 0; index < argc; index++) {
+    /* first deal with the command itself */
+    argv[0] = (char*)calloc(1, sizeof(char[255]));
+    strcpy(argv[0], cmd_tmp->element);
+    cmd_tmp = cmd_tmp -> next;
+    /* then copy the following words */
+    for (index = 1; index < argc; index++) {
+        if (cmd_tmp == NULL) break;
         assert(cmd_tmp->element);
         argv[index] = (char*)malloc((strlen(cmd_tmp->element)+1)*sizeof(char));
         strcpy(argv[index], cmd_tmp->element);
         cmd_tmp = cmd_tmp -> next;
-        if (cmd_tmp == NULL) break;
     }
     argv[argc] = NULL;
     return count; 
@@ -234,11 +240,16 @@ find_cmd()
 {
     int return_value = 0;
     /* find_alias */
-    char *char_tmp = (char*)calloc(1, 512);
-    strcpy (char_tmp, find_alias(cmd_head->element));
-    strcpy (cmd_head->element, char_tmp);
-    free(char_tmp);
-    char_tmp = NULL;
+    char *char_tmp = find_alias(cmd_head->element);
+    /* IMPORTANT MEMORY PROBLEM 
+     * if the input command is an alias, then char_tmp
+     *   and cmd_head->element are different pointers;
+     * else they are the same pointer.
+     * This is defined by my implemented function.
+     * Have to be careful about memory problem!
+     */
+    if (char_tmp != cmd_head->element)
+        strcpy (cmd_head->element, char_tmp);
 
     /* exit */
     if (strcmp(cmd_head->element, "exit") == 0) {

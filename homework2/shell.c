@@ -35,7 +35,7 @@ shell_init(void)
 
     p = (char*)malloc(sizeof(char[128]));
     printf("*** Welcome to Yuqi's Shell ! ***\n");
-    path_list = (struct pathelement*)malloc (sizeof(struct pathelement));
+    path_list = (struct pathelement*)malloc(sizeof(struct pathelement));
     path_list -> next = NULL;
     path_list -> element = NULL;
     if (getcwd(cwd, 255) == NULL) {
@@ -115,27 +115,35 @@ print_env_path()
 void
 before_exit(int status)
 {
-    if(cwd)
+    if (cwd) {
         free(cwd);
-    if(prompt)
+        cwd = NULL;
+    }
+    if (prompt) {
         free(prompt);
-    if (cmd_char)
+        prompt = NULL;
+    }
+    if (cmd_char) {
         free(cmd_char);
-    if (p)
+        cmd_char = NULL;
+    }
+    if (p) {
         free(p);
-    if (env_path)
+        p = NULL;
+    }
+    if (env_path) {
         free(env_path);
+        env_path = NULL;
+    }
     if (path_list) {
         path_tmp = path_list;
         while (path_tmp) {
           struct pathelement *next_to_del = path_tmp -> next;
           free(path_tmp);
+          path_tmp = NULL;
           path_tmp = next_to_del;
         }
-        free(path_list);
     }
-    if (path_tmp)
-        free(path_tmp);
 }
 
 /* The main function of this shell
@@ -162,7 +170,7 @@ main(int argc, char** argv, char** envp)
         history_add();
         prepare_for_next_cycle();
     }
-    //before_exit(status);
+    before_exit(status);
     fflush(stdout);
     return 0;
 }

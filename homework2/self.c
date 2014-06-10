@@ -128,6 +128,14 @@ char
         }
         iter = iter->next;
     }
+    /* NOTICE that this is not safe!
+     * if user freed the return value (as is "input" here),
+     * it is freeing the input parameter too. If that parameter
+     * is in use, the user gets a segmentation fault!
+     * HENCE the safe way is to allocate some new memory,
+     * copy the string to the new memory, and return the new
+     * pointer.
+     */
     if (flag == 0)
         return input;
     else
@@ -152,8 +160,7 @@ cmd_history(int argc, char** argv)
     }
 }
 
-/* print_history() function
-*/
+/* print_history() function */
 void
 print_history(int number)
 {
@@ -163,7 +170,7 @@ print_history(int number)
         printf("YuqiShell: history: empty history.\n");
         return;
     }
-    while(iter!=NULL && count > 0) {
+    while (iter != NULL && count > 0) {
         printf("%s", iter->cmd);
         count--;
         iter = iter -> next;
