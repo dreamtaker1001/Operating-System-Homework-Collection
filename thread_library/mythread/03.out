@@ -1,0 +1,23 @@
+I am main thread (0)...
+I am WRITE thread 1 (0)
+  [1 WRITE 0] resource = 83
+I am WRITE thread 2 (0)
+  [2 WRITE 0] resource = 86
+I am READ thread 11 (0)
+  [11 READ 0] resource = 86
+I am READ thread 22 (0)
+  [22 READ 0] resource = 86
+I am WRITE thread 3 (0)
+  [3 WRITE 0] resource = 77
+I am WRITE thread 4 (0)
+  [4 WRITE 0] resource = 15
+I am READ thread 33 (0)
+  [33 READ 0] resource = 15
+I am READ thread 44 (0)
+  [44 READ 0] resource = 15
+I am main thread (1)...
+I am WRITE thread 1 (1)
+  [1 WRITE 1] resource = 93
+I am WRITE thread 2 (1)
+  [2 WRITE 1] resource = 35
+  ** [11 READ 0] returns from t_yield()

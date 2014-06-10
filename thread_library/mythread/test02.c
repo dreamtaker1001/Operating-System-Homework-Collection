@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <signal.h>
-#include "ud_thread.h"
+#include "mythread.h"
 
 void function(int thr_id) {
 

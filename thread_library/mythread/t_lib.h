@@ -9,7 +9,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <signal.h>
-#include "ud_thread.h"
+#include "mythread.h"
 #include "list.h"
 
 #define MAGIC 0x123456

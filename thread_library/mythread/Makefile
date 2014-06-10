@@ -40,31 +40,31 @@ test: ${TSTEXES} ${TSTOUTS}
 t_lib.o: t_lib.c t_lib.h Makefile
 	${CC} ${CFLAGS} -c t_lib.c 
 
-sem.o: sem.c t_lib.h ud_thread.h Makefile
+sem.o: sem.c t_lib.h mythread.h Makefile
 	${CC} ${CFLAGS} -c sem.c
 
 list.o:	list.h list.c Makefile
 	${CC} ${CFLAGS} -c list.c
 
-mailbox.o: mailbox.c t_lib.h ud_thread.h Makefile
+mailbox.o: mailbox.c t_lib.h mythread.h Makefile
 	${CC} ${CFLAGS} -c mailbox.c
 
-test03.o: test03.c ud_thread.h list.h t_lib.h
+test03.o: test03.c mythread.h list.h t_lib.h
 	${CC} ${CFLAGS} -c test03.c
 
-test06.o: test06.c ud_thread.h list.h t_lib.h
+test06.o: test06.c mythread.h list.h t_lib.h
 	${CC} ${CFLAGS} -c test06.c
 
-test05.o: test05.c ud_thread.h list.h t_lib.h
+test05.o: test05.c mythread.h list.h t_lib.h
 	${CC} ${CFLAGS} -c test05.c
 	
-test08.o: test08.c ud_thread.h list.h t_lib.h
+test08.o: test08.c mythread.h list.h t_lib.h
 	${CC} ${CFLAGS} -c test08.c
 
-test09.o: test09.c ud_thread.h list.h t_lib.h
+test09.o: test09.c mythread.h list.h t_lib.h
 	${CC} ${CFLAGS} -c test09.c
 	
-test11.o: test11.c ud_thread.h list.h t_lib.h
+test11.o: test11.c mythread.h list.h t_lib.h
 	${CC} ${CFLAGS} -c test11.c
 
 test03: test03.o t_lib.a

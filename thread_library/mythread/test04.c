@@ -3,7 +3,7 @@
  */
 
 #include <stdio.h>
-#include "ud_thread.h"
+#include "mythread.h"
 
 void thread_function(int val) {
 

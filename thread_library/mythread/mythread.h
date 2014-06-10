@@ -1,8 +1,8 @@
 /* 
  * thread library function prototypes
  */
-#ifndef H_UD_THREAD
-#define H_UD_THREAD
+#ifndef H_MY_THREAD
+#define H_MY_THREAD
 #include "list.h"
 typedef void sem_t;  // for semaphore
 
