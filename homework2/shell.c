@@ -33,7 +33,6 @@ shell_init(void)
     cmd_head->element = NULL;
     cmd_head->next = NULL;
 
-    p = (char*)malloc(sizeof(char[128]));
     printf("*** Welcome to Yuqi's Shell ! ***\n");
     path_list = (struct pathelement*)malloc(sizeof(struct pathelement));
     path_list -> next = NULL;

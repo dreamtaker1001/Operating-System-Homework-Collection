@@ -131,8 +131,15 @@ prepare_for_next_cycle()
         cmd_head->element = NULL;
         cmd_head->next = NULL;
     }
-    if (p)
-        p = (char*)realloc(p, sizeof(char[128]));
+    int i;
+    for (i = 0; i < argc; i++) {
+        if (argv[i]) {
+            free(argv[i]);
+            argv[i] = NULL;
+        }
+    }
+    free(argv);
+    argv = NULL;
 }
 
 /* the history init function*/
@@ -263,7 +270,7 @@ find_cmd()
             printf("which: Usage: which <file/command>\n");
             return SYNTAX_ERROR;
         }
-        return (cmd_which(argc, argv, 1, NULL));
+        return cmd_which(argc, argv, 1, NULL);
     }
     /* where */
     else if (strcmp(cmd_head->element, "where") == 0) {
@@ -272,7 +279,7 @@ find_cmd()
             printf("YuqiShell: where: Usage: where <file/command>\n");
             return SYNTAX_ERROR;
         }
-        return (cmd_which(argc, argv, 2, NULL));
+        return cmd_which(argc, argv, 2, NULL);
     }
     /* pwd */
     else if (strcmp(cmd_head->element, "pwd") == 0) {
@@ -286,7 +293,7 @@ find_cmd()
     }
     /* cd */
     else if (strcmp(cmd_head->element, "cd") == 0) {
-        return (cmd_cd(argc, argv));
+        return cmd_cd(argc, argv);
     }
     /* ls */
     else if (strcmp(cmd_head->element, "ls") == 0) {

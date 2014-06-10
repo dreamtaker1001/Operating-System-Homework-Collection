@@ -57,6 +57,8 @@ cmd_which(int argc, char **argv, int mode, char* return_value)
         }
         path_tmp = path_tmp -> next;
     }
+    free(final_path);
+    final_path = NULL;
     if (mode == 1) 
         printf("YuqiShell: which: no %s in PATH!\n", argv[1]);
     if (mode == 2 && flag == 0)
