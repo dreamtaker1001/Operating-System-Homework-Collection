@@ -28,19 +28,27 @@ cmd_cd(int argc, char** argv)
     if (argc > 2) {
         printf("YuqiShell: cd: too many arguments! \n \
                 YuqiShell: cd: Usage: cd <directory> OR cd OR cd -\n");
+        free(new_dir);
+        free(temp);
         return SYNTAX_ERROR;
     }
     /* cd to home directory */
     if (argc == 1) {
-        if ((new_dir=getenv("HOME")) == NULL) {
+        if (getenv("HOME") == NULL) {
             printf("YuqiShell: cd: unable to get home dir!\n");
+            free(new_dir);
+            free(temp);
             return OTHER_ERROR;
         }
+        else
+            strcpy(new_dir, getenv("HOME"));
     }
     else if (argc == 2) {
         if (strcmp(argv[1], "-") == 0) {
             if (strcmp(last_dir, "") == 0) {
                 printf("YuqiShell: cd: error: do not have last dir yet!\n");
+                free(new_dir);
+                free(temp);
                 return OTHER_ERROR;
             }
             else {
@@ -55,10 +63,16 @@ cmd_cd(int argc, char** argv)
     /* Changes the dir */
     if (chdir(new_dir) != 0) {
         printf("YuqiShell: cd: error changing dir, %s\n", strerror(errno));
+        free(new_dir);
+        free(temp);
         return OTHER_ERROR;
     }
     getcwd(cwd, 255);
     strcpy(last_dir, temp);
+    free(temp);
+    temp = NULL;
+    free(new_dir);
+    new_dir = NULL;
     return NORMAL;
 }
 
